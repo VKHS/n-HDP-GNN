@@ -101,6 +101,4 @@ The script prints accuracy, F1, AUC, and over‑smoothing metrics, then pops up 
 
 ## 🙏  Acknowledgements
 
-This project was supported by the XYZ‑Supercomputing Centre (grant 123‑ABC). We thank the PyTorch Geometric team and reviewers for insightful feedback.
-
-> *Maintainers*: Your Name (University A) · your.email\@domain · [@your‑handle](https://twitter.com/your‑handle)
+This project was supported by the Wallenberg AI, Autonomous Systems and Software Program (WASP).
