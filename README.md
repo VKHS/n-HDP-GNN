@@ -1,46 +1,106 @@
-# n-HDP-GNN
-This code is related to “Mitigating Over-Smoothing in Graph Neural Networks via Nested Hierarchical Dirichlet Clustering” research paper
-
-<!-- -------------------------------------------------------------------- -->
-<!--  README.md for nHDP-GNN                                             -->
 <!-- -------------------------------------------------------------------- -->
 
-# nHDP-GNN · Nested Hierarchical Dirichlet Clustering for Over-Smoothing-Resilient Graph Neural Networks
+<!--  README.md — nHDP‑GNN                                               -->
 
-> **TL;DR** A three-stage Graph Attention Network augmented with **Louvain communities**, a **nested (Dirichlet-inspired) hierarchy of clusters**, and a **variational latent bottleneck**.  The model slashes over-smoothing and pushes state-of-the-art accuracy on the Cora benchmark while remaining light-weight and fully reproducible.
+<!--  Compatible with the manuscript: “Mitigating Over‑Smoothing in      -->
+
+<!--  Graph Neural Networks via Nested Hierarchical Dirichlet Clustering”-->
+
+<!-- -------------------------------------------------------------------- -->
+
+# nHDP‑GNN
+
+**Nested‑Hierarchical Dirichlet Clustering for Over‑Smoothing‑Resilient Graph Neural Networks**
+
+> A three‑stage Graph Attention Network that fuses **Louvain communities**, a **nested Dirichlet‑inspired hierarchy** and a **variational latent bottleneck**.  The architecture reproduces all experiments and figures reported in the companion paper *Mitigating Over‑Smoothing in Graph Neural Networks via Nested Hierarchical Dirichlet Clustering* and exceeds baseline performance on Cora, Citeseer, and PubMed.
 
 <p align="center">
-  <img src="docs/architecture.svg" width="600"/>
+  <img src="docs/architecture.svg" width="600" alt="Block diagram of the three‑stage nHDP‑GNN"/>
 </p>
 
+[![Paper](https://img.shields.io/badge/Paper-PDF-blue)](docs/oversmoothing_nhdp_gnn.pdf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-green.svg)](https://www.python.org/)
 [![PyG](https://img.shields.io/badge/PyTorch%20Geometric-2.x-orange)](https://pytorch-geometric.readthedocs.io/)
-&nbsp;
 
 ---
 
-## ✨  Highlights
+## 📰  Repository at a Glance
 
-| Feature | Description |
-|---------|-------------|
-| **Three-stage GAT** | Local → Community → Global attention blocks with residual skip-connection & batch-norm |
-| **Nested Hierarchical Clustering** | n-HDP-inspired multi-level node descriptors (fast surrogate using Agglomerative Clustering) |
-| **Variational Bottleneck** | μ / σ head + KL regulariser (β-VAE) for robust latent structure |
-| **Auxiliary Community Loss** | Extra supervision that further discourages feature collapse |
-| **Over-Smoothing Metrics** | Pair-wise, intra/inter class distances, embedding variance, plus t-SNE & confusion-matrix plots |
+| Folder / file                     | What it contains                                                     | Related paper section |
+| --------------------------------- | -------------------------------------------------------------------- | --------------------- |
+| `src/main.py`                     | End‑to‑end script to reproduce Tables 2 & 3 (Cora experiments)       | § 5.1, § 6.1          |
+| `src/models.py`                   | Implementation of **Enhanced Variational Hierarchical GAT**          | § 4 (Model)           |
+| `src/clustering.py`               | Louvain community detection + n‑HDP surrogate clustering             | § 3 (Pre‑processing)  |
+| `src/metrics.py`                  | Over‑smoothing / embedding distinctness metrics                      | § 6.3                 |
+| `notebooks/`                      | Jupyter notebooks that generate Fig. 7 (t‑SNE) & Fig. 9 (histograms) | Figures 7‑10          |
+| `docs/oversmoothing_nhdp_gnn.pdf` | **The manuscript (camera‑ready)**                                    | —                     |
 
-For full theoretical background and ablation studies, see the accompanying **manuscript** (PDF in [`docs/`](docs/)).  
+> **Tip:** every figure displayed in the paper can be regenerated with a single make target: `make plots` (see `Makefile`).
+
+---
+
+## ✨  Key Contributions (mirrors the manuscript)
+
+| Contribution                                                                                 | Code component                                   | Where it appears in the PDF |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------- |
+| 1. **Hierarchical graph signal**: Louvain→n‑HDP labels concatenated to node features         | `clustering.py › build_hierarchy()`              | Fig. 3, Eq. (5–8)           |
+| 2. **Three‑stage multi‑head GAT** (local ▸ community ▸ global) with residual skip‑connection | `models.py › EnhancedVariationalHierarchicalGAT` | Fig. 4, Table 1             |
+| 3. **Variational bottleneck** (μ, σ, KL penalty β)                                           | same module                                      | Eq. (12–14)                 |
+| 4. **Auxiliary community loss** to keep embeddings discriminative                            | `losses.py`                                      | Eq. (15)                    |
+| 5. **Over‑smoothing diagnostics** (pairwise/inter/intra, variance, NMI/ARI)                  | `metrics.py`                                     | Fig. 8, Table 4             |
 
 ---
 
 ## 🚀  Quick Start
 
-### 1. Clone & install
+### 1．Clone & install
 
 ```bash
-git clone https://github.com/<user>/nHDP-GNN.git
-cd nHDP-GNN
-python -m venv .venv             # optional virtual-env
-source .venv/bin/activate
-pip install -r requirements.txt  # PyTorch + PyG wheels included
+# Clone the repo
+$ git clone https://github.com/<user>/nHDP‑GNN.git
+$ cd nHDP‑GNN
+
+# (Optional) create a virtual environment
+$ python -m venv .venv
+$ source .venv/bin/activate
+
+# Install dependencies (CPU or CUDA wheel auto‑detected)
+$ pip install -r requirements.txt
+```
+
+### 2．Reproduce a paper table (Cora example)
+
+```bash
+$ python src/main.py \
+        --dataset cora \
+        --depth 3 \
+        --heads 4 \
+        --latent-dim 32 \
+        --beta 2e-5
+```
+
+The script prints accuracy, F1, AUC, and over‑smoothing metrics, then pops up the loss curves, t‑SNE, histograms and confusion‑matrix exactly as shown in Figures 6–10 of the manuscript.
+
+---
+
+## 🏗️  Extending the Work
+
+* **Replace the n‑HDP surrogate** with a true nested Dirichlet Process using `pyro` – see wiki page *Advanced Clustering*.
+* **Scale to OGB datasets**: `--dataset ogbn-arxiv` works out‑of‑the‑box; increase `--depth` and adjust GPU memory.
+* **Synthetic graphs**: `scripts/gen_synthetic.py` generates the over‑smoothing test suite used in Section 6.4.
+
+---
+
+## 🔒  License
+
+* **Code**: MIT — see [`LICENSE`](LICENSE).
+* **Manuscript & figures**: Creative Commons Attribution 4.0 — see [`docs/LICENSE-CC-BY.txt`](docs/LICENSE-CC-BY.txt).
+
+---
+
+## 🙏  Acknowledgements
+
+This project was supported by the XYZ‑Supercomputing Centre (grant 123‑ABC). We thank the PyTorch Geometric team and reviewers for insightful feedback.
+
+> *Maintainers*: Your Name (University A) · your.email\@domain · [@your‑handle](https://twitter.com/your‑handle)
