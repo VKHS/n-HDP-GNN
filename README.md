@@ -84,7 +84,7 @@ The script prints accuracy, F1, AUC, and over‑smoothing metrics, then pops up 
 
 ---
 
-## 🏗️  Extending the Work
+## 🏗️  Some aspects of the Work
 
 * **Replace the n‑HDP surrogate** with a true nested Dirichlet Process using `pyro` – see wiki page *Advanced Clustering*.
 * **Scale to OGB datasets**: `--dataset ogbn-arxiv` works out‑of‑the‑box; increase `--depth` and adjust GPU memory.
