@@ -10,7 +10,9 @@
 
 # nHDP‑GNN
 
+**n‑HDP‑GNN: community‑aware Bayesian clustering for over‑smoothing‑resilient, communication‑efficient distributed GNNs**
 **Nested‑Hierarchical Dirichlet Clustering for Over‑Smoothing‑Resilient Graph Neural Networks**
+
 
 > A three‑stage Graph Attention Network that fuses **Louvain communities**, a **nested Dirichlet‑inspired hierarchy** and a **variational latent bottleneck**.  The architecture reproduces all experiments and figures reported in the companion paper *Mitigating Over‑Smoothing in Graph Neural Networks via Nested Hierarchical Dirichlet Clustering* and exceeds baseline performance on Cora, Citeseer, and PubMed.
 
