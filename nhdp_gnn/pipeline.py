@@ -8,10 +8,14 @@ Batches  one ``PartBatch`` per part: its induced subgraph, gate values, GCN
          the whole graph.
 
 Stage outputs depend only on the data, the pipeline configuration and the seed,
-so they are cached as .npz files and shared across depths and models.
+so they are cached as .npz files and shared across depths and models.  Cache
+files are written atomically, and an unreadable cache file is recomputed, so
+concurrent sweep shards can share one cache directory.
 """
 from __future__ import annotations
 
+import os
+import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -72,6 +76,36 @@ def _smooth(data, hops: int) -> np.ndarray:
     return x
 
 
+def compute_partition(data, cfg: PipelineConfig) -> np.ndarray:
+    """Stage A edge cut.  It depends only on the data, ``cfg.partition``, ``cfg.num_parts``
+    and the seed, so every method trained on the same graph shares it.  The
+    'community' method packs global Louvain super-communities into parts."""
+    N, ei = data.num_nodes, data.edge_index
+    if cfg.num_parts > 1 and cfg.partition == "community":
+        glob = nested_communities(ei, N, seed=cfg.seed, resolution=cfg.louvain_resolution,
+                                  backend=cfg.louvain_backend)
+        return partition_nodes(ei, N, cfg.num_parts, "community", communities=glob.super_community, seed=cfg.seed)
+    return partition_nodes(ei, N, cfg.num_parts, cfg.partition, seed=cfg.seed)
+
+
+def _load_stages(path: Path) -> StageOutput:
+    with np.load(path, allow_pickle=False) as z:
+        diag = {k[5:]: z[k].item() if z[k].ndim == 0 else z[k].tolist() for k in z.files if k.startswith("diag_")}
+        R = z["R"] if z["R"].size else None
+        return StageOutput(z["parts"], z["community"], z["super_of"], R, diag)
+
+
+def _save_stages(path: Path, out: StageOutput) -> None:
+    """Write to a temporary file in the same directory, then rename: readers never see a partial file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    with open(tmp, "wb") as fh:
+        np.savez_compressed(fh, parts=out.parts, community=out.community, super_of=out.super_of,
+                            R=out.R if out.R is not None else np.zeros(0, np.float32),
+                            **{f"diag_{k}": np.asarray(v) for k, v in out.diagnostics.items()})
+    os.replace(tmp, path)
+
+
 def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduce=None,
                only_part: int | None = None, parts: np.ndarray | None = None,
                verbose: bool = False) -> StageOutput:
@@ -82,20 +116,14 @@ def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduc
     key = config_hash(_cache_key(data, cfg))
     path = Path(cache_dir) / f"stages_{data.name}_{key}.npz" if cache_dir and only_part is None else None
     if path is not None and path.exists():
-        z = np.load(path, allow_pickle=False)
-        diag = {k[5:]: z[k].item() if z[k].ndim == 0 else z[k].tolist() for k in z.files if k.startswith("diag_")}
-        R = z["R"] if z["R"].size else None
-        return StageOutput(z["parts"], z["community"], z["super_of"], R, diag)
+        try:
+            return _load_stages(path)
+        except (OSError, EOFError, ValueError, KeyError, zipfile.BadZipFile):
+            pass                                        # unreadable cache file: recompute and replace it
 
     N, ei = data.num_nodes, data.edge_index
     rng_seed = cfg.seed
-    if parts is not None:
-        parts = np.asarray(parts, dtype=np.int64)
-    elif cfg.num_parts > 1 and cfg.partition == "community":
-        glob = nested_communities(ei, N, seed=rng_seed, resolution=cfg.louvain_resolution, backend=cfg.louvain_backend)
-        parts = partition_nodes(ei, N, cfg.num_parts, "community", communities=glob.super_community, seed=rng_seed)
-    else:
-        parts = partition_nodes(ei, N, cfg.num_parts, cfg.partition, seed=rng_seed)
+    parts = np.asarray(parts, dtype=np.int64) if parts is not None else compute_partition(data, cfg)
 
     sel = np.ones(N, dtype=bool) if only_part is None else parts == only_part
     sub_parts = np.where(sel, parts, -1)
@@ -163,10 +191,7 @@ def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduc
 
     out = StageOutput(parts, nc.community, nc.super_of, R, diag)
     if path is not None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(path, parts=parts, community=nc.community, super_of=nc.super_of,
-                            R=R if R is not None else np.zeros(0, np.float32),
-                            **{f"diag_{k}": np.asarray(v) for k, v in diag.items()})
+        _save_stages(path, out)
     return out
 
 

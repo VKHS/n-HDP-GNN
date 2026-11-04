@@ -43,6 +43,10 @@ Useful options:
 * **Model selection**: early stopping on the validation metric. The selected state is restored before the single test evaluation.
 * **Statistics**: mean ± 95% t-interval over seeds. `--reference` adds paired two-sided Wilcoxon p-values against the reference row.
 * **Same partition for every method** in multi-part and distributed runs: the partition depends only on the data, the method and the seed.
+* **Depth** is the number of propagation steps; each JSON records it as `propagation_depth`. Graph U-Net maps depth L to max(1, ⌊L/2⌋) pooling levels, i.e. 2·levels + 1 GCN layers, so every depth row is a different network.
+* **Embedding diagnostics** (Tables 5-8: centroid gap, MADGap, k-means NMI/ARI) are computed on the logits, the one representation every model has. `embedding.centroid_gap_per_layer` profiles the hidden layers of the models that have a layer-wise hidden stack (n-HDP-GNN, GCN, GAT, ARMA, GCNII, PairNorm, DropEdge).
+* **BatchNorm with several parts**: every part is normalised with its own statistics, in training and in evaluation (running averages would mix the parts). In DDP each rank keeps its own buffers.
+* **Baseline settings**: `alpha` is APPNP's teleport probability and GCNII's initial-residual weight; `theta` is GCNII's identity-mapping strength. ARMA uses one ARMA₁ filter per layer with the activation between layers only.
 
 ## Baselines
 
@@ -60,4 +64,18 @@ come from `nhdp_gnn.splits.regime_split`.
 * `ogb_depth.toml` trains ogbn-products in 16 parts on one node. The distributed
   configs use one part per worker.
 * Datasets are downloaded to `data/` on first use. Stage A/B outputs are cached in
-  `cache/` and shared across depths and models.
+  `cache/` and shared across depths and models; cache files are written
+  atomically, so sweep shards can share the directory.
+* OGB: `ogb` 1.3.6 (the latest release) loads its processed files with `torch.load`
+  defaults that fail on torch ≥ 2.6; `load_dataset` works around this. ogbn-products
+  is a 1.4 GB download: without a terminal (batch or torchrun jobs) it proceeds
+  without OGB's confirmation prompt. Downloading once before a sweep avoids
+  repeating it per job:
+
+  ```bash
+  python -c "from nhdp_gnn.data import load_dataset; load_dataset('ogbn-products')"
+  ```
+
+  In distributed runs rank 0 loads the dataset first and the other ranks wait.
+* Requirements: torch ≥ 2.3 and torch_geometric ≥ 2.6 (older combinations fail to
+  load the processed datasets under current torch).

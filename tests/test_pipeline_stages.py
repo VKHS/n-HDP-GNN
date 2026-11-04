@@ -44,6 +44,21 @@ def test_stages_shapes_and_diagnostics(assign, num_parts, partition, tmp_path):
         assert np.allclose(again.R, out.R)
 
 
+def test_truncated_cache_file_is_recomputed(tmp_path):
+    """A cache file cut short (e.g. a concurrent sweep shard died while writing) is rebuilt, not loaded."""
+    data = load_dataset("synthetic", synthetic=SYN)
+    pc = cfg(assign="nhdp")
+    ref = run_stages(data, pc, cache_dir=str(tmp_path))
+    files = list(tmp_path.glob("stages_*.npz"))
+    assert len(files) == 1 and not list(tmp_path.glob(".*.tmp"))   # written atomically, no leftovers
+    full = files[0].read_bytes()
+    files[0].write_bytes(full[: len(full) // 2])
+    again = run_stages(data, pc, cache_dir=str(tmp_path))
+    assert np.array_equal(again.parts, ref.parts) and np.allclose(again.R, ref.R)
+    with np.load(files[0]) as z:                                    # and the file was rewritten
+        assert z["R"].shape == ref.R.shape
+
+
 def test_per_rank_stages_match_single_process():
     """Two simulated ranks (threads) with an all-reduce reproduce the single-process responsibilities."""
     data = load_dataset("synthetic", synthetic=SYN)

@@ -5,6 +5,8 @@ One process per worker node, gloo backend, launched with torchrun:
     torchrun --nnodes 14 --nproc-per-node 1 --rdzv-backend c10d --rdzv-endpoint MASTER:29500 \\
         -m nhdp_gnn.distributed --dataset ogbn-products --regime full --depth 10 --out_dir runs/hpc
 
+Data     rank 0 loads (and if needed downloads and processes) the dataset first;
+         the other ranks load it after a barrier.
 Stage A  rank 0 computes a world_size-way edge cut and broadcasts it; every rank
          runs nested Louvain on its own part.
 Stage B  every rank runs n-HDP inference on its part; the global sufficient
@@ -13,7 +15,10 @@ Stage B  every rank runs n-HDP inference on its part; the global sufficient
 Stage C  every rank trains on its part's induced subgraph (cut edges are not
          propagated, node features are local); DistributedDataParallel averages
          gradients.  The loss of each rank is scaled so that the averaged
-         gradient equals that of the global mean loss over all training nodes.
+         gradient equals that of the global (class-weighted, if enabled) mean loss
+         over all training nodes.  Dropout masks are seeded per rank.  BatchNorm
+         keeps per-rank buffers and evaluation uses each part's own statistics,
+         as in single-process multi-part training.
 
 Systems metrics written by rank 0: time per epoch, edge-updates per second
 (edges incl. self-loops x depth, summed over ranks, per step), gradient bytes per
@@ -28,6 +33,7 @@ from __future__ import annotations
 
 import copy
 import os
+import socket
 import sys
 import time
 from dataclasses import asdict, replace
@@ -38,13 +44,12 @@ import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
+from .config import RunConfig, config_from_dict, parse_args
 from .data import load_dataset
 from .losses import supervised_loss
-from .partition import partition_nodes
-from .pipeline import build_batches, run_stages
+from .pipeline import build_batches, compute_partition, run_stages
 from .splits import regime_split
-from .config import RunConfig, config_from_dict, parse_args
-from .train import build_model, score
+from .train import build_model, class_weights, has_batchnorm, part_statistics, score
 from .utils import save_json, set_seed
 
 
@@ -88,7 +93,7 @@ def _sum(x: float) -> float:
 
 def _global_score(model, batch, y_full: np.ndarray, mask_full: np.ndarray, multilabel: bool) -> float:
     model.eval()
-    with torch.no_grad():
+    with torch.no_grad(), part_statistics(model, dist.get_world_size() > 1 and batch.num_nodes > 1):
         logits, _, _ = model(batch)
     ids = batch.node_ids.numpy()
     if not multilabel:
@@ -115,7 +120,11 @@ def worker(cfg: RunConfig) -> dict | None:
     if cfg.threads:
         torch.set_num_threads(cfg.threads)
     cfg = replace(cfg, num_parts=world, aux_weight=0.0)
+    if rank != 0:                                       # rank 0 downloads and processes first
+        dist.barrier()
     data = load_dataset(cfg.dataset, cfg.root, cfg.synthetic)
+    if rank == 0:
+        dist.barrier()
     split = regime_split(data.y, cfg.regime, cfg.seed, full_split=data.official_split,
                          public_split=data.public_split if cfg.regime == "semi" else None,
                          semi_per_class=cfg.semi_per_class, semi_ratio=cfg.semi_ratio, scarce_ratio=cfg.scarce_ratio)
@@ -123,7 +132,7 @@ def worker(cfg: RunConfig) -> dict | None:
     t0 = time.perf_counter()
     parts = torch.zeros(data.num_nodes, dtype=torch.long)
     if rank == 0:
-        parts = torch.as_tensor(partition_nodes(data.edge_index, data.num_nodes, world, cfg.partition, seed=cfg.seed))
+        parts = torch.as_tensor(compute_partition(data, cfg.pipeline()), dtype=torch.long)
     dist.broadcast(parts, src=0)
     stages = run_stages(data, cfg.pipeline(), cache_dir=None, reduce=np_allreduce, only_part=rank,
                         parts=parts.numpy())
@@ -131,13 +140,25 @@ def worker(cfg: RunConfig) -> dict | None:
     batch = build_batches(data, stages, split, gate=cfg.gate, parts_to_build=[rank])[0]
 
     model = build_model(cfg, data.x.shape[1], data.num_classes)
-    ddp = DDP(model, broadcast_buffers=False)
+    smallest = torch.tensor([batch.num_nodes], dtype=torch.long)
+    dist.all_reduce(smallest, op=dist.ReduceOp.MIN)     # decided on every rank, so all ranks stop together
+    if has_batchnorm(model) and int(smallest.item()) < 2:
+        raise ValueError(f"a part has {int(smallest.item())} node(s); BatchNorm needs at least 2 "
+                         "(use --norm layer or fewer workers)")
+    ddp = DDP(model, broadcast_buffers=False)           # broadcasts rank 0's initial parameters
+    torch.manual_seed(cfg.seed + rank)                  # independent dropout masks per rank
     comm = CommStats()
     ddp.register_comm_hook(comm, timed_allreduce_hook)
     opt = torch.optim.AdamW(ddp.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
 
+    weight = class_weights(data.y, split[0], data.num_classes) if cfg.class_weights and not data.multilabel else None
+    y_train = batch.y[batch.train_mask]
     n_train_local = int(batch.train_mask.sum())
     n_train_global = _sum(n_train_local)
+    # each rank's loss is a mean over its own training nodes (weighted by class if enabled);
+    # rescaling by local/global normaliser x world makes DDP's gradient average the global mean
+    norm_local = float(weight[y_train].sum()) if weight is not None else float(n_train_local)
+    norm_global = _sum(norm_local)
     edges_global = _sum(batch.edge_index_sl.shape[1])
     y_np, val_mask, test_mask = np.asarray(data.y), split[1], split[2]
     best_val, best_epoch, best_state = -np.inf, 0, None
@@ -149,9 +170,9 @@ def worker(cfg: RunConfig) -> dict | None:
         opt.zero_grad()
         logits, _, _ = ddp(batch)
         if n_train_local > 0:
-            loss = supervised_loss(logits[batch.train_mask], batch.y[batch.train_mask], data.multilabel,
-                                   cfg.loss, cfg.focal_gamma)
-            loss = loss * (n_train_local * world / n_train_global)
+            loss = supervised_loss(logits[batch.train_mask], y_train, data.multilabel, cfg.loss, cfg.focal_gamma,
+                                   weight)
+            loss = loss * (norm_local * world / norm_global)
         else:
             loss = logits.sum() * 0.0                   # still joins the gradient all-reduce
         loss.backward()
@@ -184,7 +205,9 @@ def worker(cfg: RunConfig) -> dict | None:
     result = {
         "key": cfg.key() + f"-ddp{world}", "config": asdict(cfg), "metric": data.metric, "world_size": world,
         "val": val, "test": test, "best_epoch": best_epoch, "epochs_run": len(step_times),
-        "n_params": int(sum(p.numel() for p in model.parameters())),
+        "propagation_depth": int(getattr(model, "propagation_depth", cfg.depth)),
+        "n_params": int(sum(p.numel() for p in model.parameters() if p.requires_grad)),
+        "n_train": int(n_train_global),
         "systems": {
             "stages_s": t_stages, "time_per_epoch_s": step_mean,
             "edges_per_s": edges_global * cfg.depth / step_mean if step_mean > 0 else float("nan"),
@@ -210,11 +233,17 @@ def _local_entry(rank: int, world: int, port: int, cfg_dict: dict) -> None:
         dist.destroy_process_group()
 
 
-def spawn_local(cfg: RunConfig, world: int = 2, port: int = 29531) -> None:
+def _free_port() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def spawn_local(cfg: RunConfig, world: int = 2, port: int | None = None) -> None:
     """Run ``world`` processes on this machine (tests and single-node scaling runs)."""
     import torch.multiprocessing as mp
 
-    mp.spawn(_local_entry, args=(world, port, asdict(cfg)), nprocs=world, join=True)
+    mp.spawn(_local_entry, args=(world, port or _free_port(), asdict(cfg)), nprocs=world, join=True)
 
 
 def main(argv=None) -> None:

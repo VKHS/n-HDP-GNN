@@ -180,7 +180,8 @@ is computed offline by `scripts/regime_report.py` on the same partition.
 | semi-supervised regime | public Planetoid split; 20 labels per class on Amazon Photo |
 | label-scarce regime | 5% of nodes, stratified, drawn from the full-regime training pool; validation and test as in the full regime |
 | MADGap | both the article's Eq. (28) (`centroid_gap`) and the topological MADGap of Chen et al., AAAI 2020 (`madgap`: neighbours ≤ 3 hops, remote ≥ 8 hops, cosine) |
-| clustering protocol | k-means, k = #classes, 10 initialisations, on L2-normalised final-layer embeddings |
+| clustering protocol | k-means, k = #classes, 10 initialisations, on the L2-normalised logits (the representation every compared model has) |
+| embedding for MADGap and Eq. (28) | the logits of every model; the per-layer centroid gap profiles the hidden layers where a model has them |
 
 ## Ablations (configs/table1_ablation.toml)
 

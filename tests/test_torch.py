@@ -1,5 +1,7 @@
 """Model, trainer and DDP tests (need torch and torch_geometric; skipped otherwise)."""
 import json
+import math
+import os
 import socket
 from dataclasses import replace
 from pathlib import Path
@@ -41,9 +43,11 @@ def test_gated_attention_zero_gate_isolates_and_unit_gate_is_attention():
     x2 = x.clone()
     x2[3:] += 5.0                                          # change the other triangle only
     out2 = conv(x2, ei, gate)
-    assert torch.allclose(out1[:3], out2[:3], atol=1e-6)
+    assert torch.equal(out1[:3], out2[:3])                 # a zero gate is an exact cut
     out3 = conv(x2, ei, torch.ones(ei.shape[1]))
     assert not torch.allclose(out1[:3], out3[:3], atol=1e-4)
+    out1.sum().backward()
+    assert all(torch.isfinite(p.grad).all() for p in conv.parameters())
 
 
 @pytest.mark.parametrize("assign", ["nhdp", "louvain", "none"])
@@ -63,14 +67,98 @@ def test_model_forward_and_all_parameters_get_gradients(tmp_path, assign, node_o
     assert not missing, missing
 
 
-@pytest.mark.parametrize("model_name", ["nhdp", "gcn", "gat", "sgc", "appnp", "arma", "gcnii", "pairnorm",
-                                        "dropedge", "graphunet"])
+ALL_MODELS = ["nhdp", "gcn", "gat", "sgc", "appnp", "arma", "gcnii", "pairnorm", "dropedge", "graphunet"]
+
+
+@pytest.mark.parametrize("model_name", ALL_MODELS)
+def test_every_trainable_parameter_receives_a_gradient(tmp_path, model_name):
+    """DistributedDataParallel (without find_unused_parameters) needs this for every model."""
+    cfg = small_cfg(tmp_path, model=model_name, depth=3)
+    data = load_dataset("synthetic", synthetic=SYN)
+    split = regime_split(data.y, "full", 0)
+    stages = run_stages(data, cfg.pipeline(), cache_dir=cfg.cache_dir)
+    b = build_batches(data, stages, split, gate=cfg.gate)[0]
+    model = build_model(cfg, data.x.shape[1], data.num_classes)
+    model.train()
+    logits, _, _ = model(b)
+    logits.logsumexp(1).mean().backward()
+    missing = [n for n, p in model.named_parameters() if p.requires_grad and p.grad is None]
+    assert not missing, missing
+
+
+def test_baseline_options_reach_the_layers(tmp_path):
+    appnp = build_model(small_cfg(tmp_path, model="appnp", alpha=0.3), 8, 3)
+    assert appnp.prop.alpha == pytest.approx(0.3)
+    gcnii = build_model(small_cfg(tmp_path, model="gcnii", alpha=0.2, theta=0.7), 8, 3)
+    assert gcnii.convs[0].alpha == pytest.approx(0.2)
+    assert gcnii.convs[0].beta == pytest.approx(math.log(0.7 / 1 + 1))
+    arma = build_model(small_cfg(tmp_path, model="arma", depth=3), 8, 3)
+    assert all(c.act is None for c in arma.convs)            # no ReLU on the logits
+    assert not any(c.weight.requires_grad for c in arma.convs)
+    unet = {d: build_model(small_cfg(tmp_path, model="graphunet", depth=d), 8, 3).propagation_depth
+            for d in (2, 4, 8, 10, 20, 30)}
+    assert unet == {2: 3, 4: 5, 8: 9, 10: 11, 20: 21, 30: 31}
+
+
+def test_hidden_must_be_divisible_by_heads(tmp_path):
+    with pytest.raises(ValueError, match="divisible"):
+        build_model(small_cfg(tmp_path, hidden=10, heads=4, node_op="gcn"), 8, 3)
+    with pytest.raises(ValueError, match="divisible"):
+        build_model(small_cfg(tmp_path, model="gat", hidden=10, heads=4, depth=3), 8, 3)
+
+
+def test_focal_loss_with_gamma_zero_is_weighted_cross_entropy():
+    from nhdp_gnn.losses import focal_loss
+
+    torch.manual_seed(0)
+    logits, target = torch.randn(20, 4), torch.randint(0, 4, (20,))
+    w = torch.tensor([1.0, 2.0, 0.5, 3.0])
+    ce = torch.nn.functional.cross_entropy(logits, target, weight=w)
+    assert torch.allclose(focal_loss(logits, target, 0.0, w), ce, atol=1e-6)
+
+
+def test_part_statistics_normalises_the_part_and_keeps_running_buffers():
+    from nhdp_gnn.train import part_statistics
+
+    bn = torch.nn.BatchNorm1d(3).eval()
+    x = torch.randn(10, 3) * 4 + 2
+    before = (bn.running_mean.clone(), bn.running_var.clone())
+    with torch.no_grad(), part_statistics(bn):
+        out = bn(x)
+    assert torch.allclose(out.mean(0), torch.zeros(3), atol=1e-5)
+    assert torch.equal(bn.running_mean, before[0]) and torch.equal(bn.running_var, before[1])
+    assert not bn.training and bn.momentum == 0.1
+
+
+class _NotAllowlisted:                                       # module level, so it unpickles by reference
+    pass
+
+
+def test_ogb_compat_loads_legacy_pickles_and_skips_the_prompt(tmp_path, monkeypatch):
+    from nhdp_gnn.data import _ogb_compat
+
+    monkeypatch.delenv("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", raising=False)
+    path = tmp_path / "legacy.pt"
+    torch.save({"obj": _NotAllowlisted()}, path)
+    with _ogb_compat():
+        assert isinstance(torch.load(path)["obj"], _NotAllowlisted)   # no weights_only, as in ogb 1.3.6
+        try:
+            import ogb.nodeproppred.dataset_pyg as ogb_pyg
+        except ImportError:
+            ogb_pyg = None
+        if ogb_pyg is not None:                               # pytest's stdin is not a terminal
+            assert ogb_pyg.decide_download("https://example.invalid/big.zip") is True
+    assert "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD" not in os.environ
+
+
+@pytest.mark.parametrize("model_name", ALL_MODELS)
 def test_training_smoke_all_models(tmp_path, model_name):
     res = run(small_cfg(tmp_path, model=model_name), verbose=False)
     assert 0.0 <= res["test"] <= 1.0 and res["best_epoch"] >= 1
     saved = json.loads((Path(res["config"]["out_dir"]) / f"{res['key']}.json").read_text())
     assert saved["test"] == res["test"]
     assert {"centroid_gap", "madgap", "nmi", "ari"} <= saved["embedding"].keys()
+    assert saved["embedding"]["representation"] == "logits" and saved["propagation_depth"] >= 2
 
 
 def test_best_state_is_restored(tmp_path):
@@ -83,9 +171,10 @@ def test_multi_part_training_and_embeddings(tmp_path):
     res = run(small_cfg(tmp_path, num_parts=3, partition="community", save_embeddings=True), verbose=False)
     assert res["stages"]["num_parts"] == 3
     files = res["embedding_files"]
-    assert len(files) == 3                                   # encoder output + 2 layers
-    emb = np.load(Path(res["config"]["out_dir"]) / files[-1])
-    assert emb.shape[0] == 270
+    assert len(files) == 4 and files[-1].endswith("_logits.npy")   # encoder output, 2 layers, logits
+    out = Path(res["config"]["out_dir"])
+    assert np.load(out / files[-2]).shape == (270, 16)
+    assert np.load(out / files[-1]).shape[0] == 270
 
 
 def test_cli_parses_types(tmp_path):
@@ -100,10 +189,15 @@ def _free_port():
         return s.getsockname()[1]
 
 
-def test_ddp_two_ranks(tmp_path):
+@pytest.mark.parametrize("model_name,partition,weighted", [
+    ("nhdp", "bfs", False),
+    ("nhdp", "community", True),      # Louvain-packed partition on rank 0; class-weighted loss
+    ("arma", "bfs", False),           # a baseline through DDP (every parameter must get a gradient)
+])
+def test_ddp_two_ranks(tmp_path, model_name, partition, weighted):
     from nhdp_gnn.distributed import spawn_local
 
-    cfg = small_cfg(tmp_path, epochs=3, partition="bfs")
+    cfg = small_cfg(tmp_path, model=model_name, epochs=3, partition=partition, class_weights=weighted)
     spawn_local(cfg, world=2, port=_free_port())
     files = list((tmp_path / "runs").glob("*-ddp2.json"))
     assert len(files) == 1

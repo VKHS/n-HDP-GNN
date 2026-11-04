@@ -37,7 +37,8 @@ class RunConfig:
     community: bool = True
     global_attn: bool = True
     residual: str = "res"               # res | initial | none
-    alpha: float = 0.1
+    alpha: float = 0.1                  # initial residual (nhdp, GCNII); teleport probability (APPNP)
+    theta: float = 0.5                  # GCNII identity-mapping strength
     norm: str = "batch"                 # batch | layer | none
     # optimisation
     lr: float = 0.005

@@ -8,6 +8,9 @@ features of incident edges (the usual OGB practice).
 """
 from __future__ import annotations
 
+import os
+import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import numpy as np
@@ -62,6 +65,49 @@ def _masks(n: int, idx_dict) -> tuple:
     return tuple(out)
 
 
+def _interactive() -> bool:
+    try:
+        return sys.stdin is not None and sys.stdin.isatty()
+    except (ValueError, OSError):
+        return False
+
+
+@contextmanager
+def _ogb_compat():
+    """Work around two behaviours of ogb 1.3.6, the latest release.
+
+    * It calls ``torch.load`` on its own processed files without ``weights_only``.
+      From torch 2.6 the default is ``weights_only=True``, which refuses the pickled
+      PyG objects.  TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD applies only to calls that do
+      not pass ``weights_only``, so PyG's own loads are unaffected.
+    * It asks on stdin before downloading more than 1 GB (ogbn-products), which
+      raises EOFError in batch and torchrun jobs.  Without a terminal the download
+      goes ahead; interactive sessions keep the prompt.
+    """
+    try:
+        import ogb.nodeproppred.dataset_pyg as ogb_pyg
+    except ImportError:
+        ogb_pyg = None
+    env_key = "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"
+    old_env = os.environ.get(env_key)
+    old_decide = getattr(ogb_pyg, "decide_download", None)
+    os.environ[env_key] = "1"
+    if old_decide is not None and not _interactive():
+        def _decide(url):
+            print(f"downloading {url} (no terminal to confirm)", flush=True)
+            return True
+        ogb_pyg.decide_download = _decide
+    try:
+        yield
+    finally:
+        if old_decide is not None:
+            ogb_pyg.decide_download = old_decide
+        if old_env is None:
+            os.environ.pop(env_key, None)
+        else:
+            os.environ[env_key] = old_env
+
+
 def load_dataset(name: str, root: str = "data", synthetic: dict | None = None) -> GraphData:
     name = name.lower()
     if name == "synthetic":
@@ -88,16 +134,17 @@ def load_dataset(name: str, root: str = "data", synthetic: dict | None = None) -
     if name in OGB:
         from ogb.nodeproppred import PygNodePropPredDataset
 
-        ds = PygNodePropPredDataset(name=name, root=f"{root}/ogb")
-        data = ds[0]
+        with _ogb_compat():
+            ds = PygNodePropPredDataset(name=name, root=f"{root}/ogb")
+            data = ds[0]
+            idx = ds.get_idx_split()
         n = int(data.num_nodes)
-        split = _masks(n, {k: v.numpy() for k, v in ds.get_idx_split().items()})
+        split = _masks(n, {k: v.numpy() for k, v in idx.items()})
         ei = undirected(data.edge_index.numpy(), n)
         if name == "ogbn-proteins":
             ea = data.edge_attr.numpy().astype(np.float64)
             dst = data.edge_index.numpy()[1]
-            x = np.zeros((n, ea.shape[1]))
-            np.add.at(x, dst, ea)
+            x = np.stack([np.bincount(dst, weights=ea[:, c], minlength=n) for c in range(ea.shape[1])], axis=1)
             x /= np.maximum(np.bincount(dst, minlength=n), 1)[:, None]
             y = data.y.numpy().astype(np.float32)
             return GraphData(name, x.astype(np.float32), y, ei, y.shape[1], multilabel=True, official_split=split)

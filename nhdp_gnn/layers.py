@@ -9,9 +9,11 @@ GlobalAttention     attention read-out over super-nodes, broadcast to every node
 """
 from __future__ import annotations
 
+from typing import Optional
+
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 from torch_geometric.nn import GATConv
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import softmax
@@ -21,7 +23,9 @@ class GatedGATConv(MessagePassing):
     """Multi-head attention normalised over gated neighbourhoods.
 
     ``edge_index`` must contain self-loops; ``gate`` holds one value in [0, 1]
-    per edge.  A zero gate removes the edge; a uniform gate recovers GAT.
+    per edge.  A zero gate removes the edge exactly (log 0 = -inf in the softmax);
+    a uniform gate recovers GAT.  Self-loop gates are ||pi_i||^2 >= 1/topk > 0, so
+    every softmax group keeps a finite entry.
     """
 
     def __init__(self, channels: int, heads: int = 4, attn_dropout: float = 0.0, negative_slope: float = 0.2):
@@ -47,11 +51,14 @@ class GatedGATConv(MessagePassing):
         xh = self.lin(x).view(-1, H, C)
         a_src = (xh * self.att_src).sum(-1)
         a_dst = (xh * self.att_dst).sum(-1)
-        log_gate = torch.log(gate.clamp_min(1e-12)).unsqueeze(-1)
+        log_gate = torch.log(gate.clamp(0.0, 1.0)).unsqueeze(-1)
         out = self.propagate(edge_index, x=xh, a_src=a_src, a_dst=a_dst, log_gate=log_gate)
         return out.reshape(-1, H * C) + self.bias
 
-    def message(self, x_j, a_src_j, a_dst_i, log_gate, index, ptr, size_i):
+    # Type annotations are required: PyG infers un-annotated arguments as Tensor,
+    # which conflicts with ``ptr: Optional[Tensor]`` of ``aggregate`` (PyG 2.5.0 raises).
+    def message(self, x_j: Tensor, a_src_j: Tensor, a_dst_i: Tensor, log_gate: Tensor, index: Tensor,
+                ptr: Optional[Tensor], size_i: Optional[int]) -> Tensor:
         e = F.leaky_relu(a_src_j + a_dst_i, self.negative_slope) + log_gate
         alpha = softmax(e, index, ptr, size_i)
         alpha = F.dropout(alpha, p=self.attn_dropout, training=self.training)
@@ -63,6 +70,8 @@ class CommunityAttention(nn.Module):
 
     def __init__(self, hidden: int, heads: int = 4, attn_dropout: float = 0.0):
         super().__init__()
+        if hidden % heads:
+            raise ValueError(f"hidden size ({hidden}) must be divisible by the number of heads ({heads})")
         self.conv = GATConv(hidden, hidden // heads, heads=heads, concat=True, dropout=attn_dropout,
                             add_self_loops=True)
 
@@ -75,7 +84,7 @@ class GlobalAttention(nn.Module):
 
     def __init__(self, hidden: int):
         super().__init__()
-        self.score = nn.Linear(hidden, 1)
+        self.score = nn.Linear(hidden, 1, bias=False)     # a bias would cancel in the softmax
         self.proj = nn.Linear(hidden, hidden)
 
     def forward(self, hc: torch.Tensor, mass: torch.Tensor) -> torch.Tensor:

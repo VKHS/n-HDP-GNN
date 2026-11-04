@@ -39,6 +39,8 @@ class NHDPLayer(nn.Module):
                  community: bool = True, global_attn: bool = True, residual: str = "res",
                  alpha: float = 0.1, norm: str = "batch"):
         super().__init__()
+        if (node_op == "gat" or community) and hidden % heads:
+            raise ValueError(f"hidden size ({hidden}) must be divisible by the number of heads ({heads})")
         if node_op == "gat":
             self.node = GatedGATConv(hidden, heads, attn_dropout)
         elif node_op == "gcn":
@@ -79,6 +81,7 @@ class NHDPGNN(nn.Module):
                  residual: str = "res", alpha: float = 0.1, norm: str = "batch", aux_classes: int = 0):
         super().__init__()
         self.dropout = dropout
+        self.propagation_depth = depth
         self.encoder = nn.Linear(in_dim, hidden)
         self.layers = nn.ModuleList([
             NHDPLayer(hidden, heads, dropout, attn_dropout, node_op, community, global_attn, residual, alpha, norm)

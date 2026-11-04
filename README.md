@@ -63,10 +63,10 @@ Each run writes `<out_dir>/<key>.json` containing:
 - validation and test metrics;
 - timings;
 - Stage A/B diagnostics;
-- embedding diagnostics (the centroid gap of Eq. 28, topological MADGap, k-means NMI/ARI);
+- embedding diagnostics on the logits (the centroid gap of Eq. 28, topological MADGap, k-means NMI/ARI), plus the per-layer centroid gap of the hidden layers;
 - the training curve.
 
-`--save_embeddings true` also stores the node embeddings of every layer as `.npy` files.
+`--save_embeddings true` also stores the hidden representation of every layer and the logits as `.npy` files.
 
 ## Reproducing the article
 
