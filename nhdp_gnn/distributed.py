@@ -1,0 +1,230 @@
+"""Distributed data-parallel training on a CPU cluster (paper Sect. 10).
+
+One process per worker node, gloo backend, launched with torchrun:
+
+    torchrun --nnodes 14 --nproc-per-node 1 --rdzv-backend c10d --rdzv-endpoint MASTER:29500 \\
+        -m nhdp_gnn.distributed --dataset ogbn-products --regime full --depth 10 --out_dir runs/hpc
+
+Stage A  rank 0 computes a world_size-way edge cut and broadcasts it; every rank
+         runs nested Louvain on its own part.
+Stage B  every rank runs n-HDP inference on its part; the global sufficient
+         statistics (stick counts, Normal-Gamma moments) are all-reduced once per
+         iteration.
+Stage C  every rank trains on its part's induced subgraph (cut edges are not
+         propagated, node features are local); DistributedDataParallel averages
+         gradients.  The loss of each rank is scaled so that the averaged
+         gradient equals that of the global mean loss over all training nodes.
+
+Systems metrics written by rank 0: time per epoch, edge-updates per second
+(edges incl. self-loops x depth, summed over ranks, per step), gradient bytes per
+step (all-reduce payload and the ring-all-reduce wire estimate 2(p-1)/p x payload),
+all-reduce wall time per step (launch to completion; it overlaps backward, so
+Comms% is an upper bound of exposed communication), and the partition's
+cross-partition edge ratio rho and super-graph edge reduction r_E.
+The Louvain auxiliary loss is disabled here because community ids are local to
+each part.
+"""
+from __future__ import annotations
+
+import copy
+import os
+import sys
+import time
+from dataclasses import asdict, replace
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+from .data import load_dataset
+from .losses import supervised_loss
+from .partition import partition_nodes
+from .pipeline import build_batches, run_stages
+from .splits import regime_split
+from .config import RunConfig, config_from_dict, parse_args
+from .train import build_model, score
+from .utils import save_json, set_seed
+
+
+class CommStats:
+    def __init__(self):
+        self.bytes, self.seconds, self.calls = 0, 0.0, 0
+
+    def reset(self):
+        self.bytes, self.seconds, self.calls = 0, 0.0, 0
+
+
+def timed_allreduce_hook(state: CommStats, bucket):
+    """DDP communication hook: average gradients and record payload size and wall time."""
+    t0 = time.perf_counter()
+    buf = bucket.buffer()
+    state.bytes += buf.numel() * buf.element_size()
+    state.calls += 1
+    fut = dist.all_reduce(buf.div_(dist.get_world_size()), async_op=True).get_future()
+
+    def done(f):
+        state.seconds += time.perf_counter() - t0
+        return f.value()[0]
+
+    return fut.then(done)
+
+
+def np_allreduce(d: dict) -> dict:
+    out = {}
+    for k, v in d.items():
+        t = torch.as_tensor(np.asarray(v, dtype=np.float64))
+        dist.all_reduce(t)
+        out[k] = t.numpy()
+    return out
+
+
+def _sum(x: float) -> float:
+    t = torch.tensor([float(x)], dtype=torch.float64)
+    dist.all_reduce(t)
+    return float(t.item())
+
+
+def _global_score(model, batch, y_full: np.ndarray, mask_full: np.ndarray, multilabel: bool) -> float:
+    model.eval()
+    with torch.no_grad():
+        logits, _, _ = model(batch)
+    ids = batch.node_ids.numpy()
+    if not multilabel:
+        pred = logits.argmax(1).numpy()
+        m = mask_full[ids]
+        correct = _sum(float((pred[m] == y_full[ids][m]).sum()))
+        total = _sum(float(m.sum()))
+        return correct / total if total > 0 else float("nan")
+    gathered = [None] * dist.get_world_size()
+    dist.all_gather_object(gathered, (ids, logits.numpy()))
+    value = [float("nan")]
+    if dist.get_rank() == 0:
+        full = np.zeros((y_full.shape[0], logits.shape[1]), dtype=np.float32)
+        for i, lo in gathered:
+            full[i] = lo
+        value = [score(full, y_full, mask_full, True)]
+    dist.broadcast_object_list(value, src=0)
+    return value[0]
+
+
+def worker(cfg: RunConfig) -> dict | None:
+    rank, world = dist.get_rank(), dist.get_world_size()
+    set_seed(cfg.seed)
+    if cfg.threads:
+        torch.set_num_threads(cfg.threads)
+    cfg = replace(cfg, num_parts=world, aux_weight=0.0)
+    data = load_dataset(cfg.dataset, cfg.root, cfg.synthetic)
+    split = regime_split(data.y, cfg.regime, cfg.seed, full_split=data.official_split,
+                         public_split=data.public_split if cfg.regime == "semi" else None,
+                         semi_per_class=cfg.semi_per_class, semi_ratio=cfg.semi_ratio, scarce_ratio=cfg.scarce_ratio)
+
+    t0 = time.perf_counter()
+    parts = torch.zeros(data.num_nodes, dtype=torch.long)
+    if rank == 0:
+        parts = torch.as_tensor(partition_nodes(data.edge_index, data.num_nodes, world, cfg.partition, seed=cfg.seed))
+    dist.broadcast(parts, src=0)
+    stages = run_stages(data, cfg.pipeline(), cache_dir=None, reduce=np_allreduce, only_part=rank,
+                        parts=parts.numpy())
+    t_stages = time.perf_counter() - t0
+    batch = build_batches(data, stages, split, gate=cfg.gate, parts_to_build=[rank])[0]
+
+    model = build_model(cfg, data.x.shape[1], data.num_classes)
+    ddp = DDP(model, broadcast_buffers=False)
+    comm = CommStats()
+    ddp.register_comm_hook(comm, timed_allreduce_hook)
+    opt = torch.optim.AdamW(ddp.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+
+    n_train_local = int(batch.train_mask.sum())
+    n_train_global = _sum(n_train_local)
+    edges_global = _sum(batch.edge_index_sl.shape[1])
+    y_np, val_mask, test_mask = np.asarray(data.y), split[1], split[2]
+    best_val, best_epoch, best_state = -np.inf, 0, None
+    step_times, comm_times, comm_bytes, curves = [], [], [], []
+    for epoch in range(1, cfg.epochs + 1):
+        ddp.train()
+        comm.reset()
+        t_step = time.perf_counter()
+        opt.zero_grad()
+        logits, _, _ = ddp(batch)
+        if n_train_local > 0:
+            loss = supervised_loss(logits[batch.train_mask], batch.y[batch.train_mask], data.multilabel,
+                                   cfg.loss, cfg.focal_gamma)
+            loss = loss * (n_train_local * world / n_train_global)
+        else:
+            loss = logits.sum() * 0.0                   # still joins the gradient all-reduce
+        loss.backward()
+        opt.step()
+        step_times.append(time.perf_counter() - t_step)
+        comm_times.append(comm.seconds)
+        comm_bytes.append(comm.bytes)
+        if epoch % cfg.eval_every == 0 or epoch == cfg.epochs:
+            val = _global_score(ddp.module, batch, y_np, val_mask, data.multilabel)
+            curves.append({"epoch": epoch, "val": val})
+            if val > best_val:
+                best_val, best_epoch = val, epoch
+                best_state = copy.deepcopy(ddp.module.state_dict())
+            elif epoch - best_epoch >= cfg.patience:
+                break
+
+    if best_state is not None:
+        ddp.module.load_state_dict(best_state)
+    val = _global_score(ddp.module, batch, y_np, val_mask, data.multilabel)
+    test = _global_score(ddp.module, batch, y_np, test_mask, data.multilabel)
+
+    warm = slice(1, None) if len(step_times) > 1 else slice(None)   # drop the first (warm-up) step
+    step_mean = _sum(float(np.mean(step_times[warm]))) / world      # synchronous steps: ~equal on all ranks
+    comm_mean = _sum(float(np.mean(comm_times[warm]))) / world
+    payload = float(np.mean(comm_bytes))
+    has_er = "edge_reduction" in stages.diagnostics                 # same on every rank (same assign mode)
+    edge_reduction = _sum(stages.diagnostics["edge_reduction"]) / world if has_er else None
+    if rank != 0:
+        return None
+    result = {
+        "key": cfg.key() + f"-ddp{world}", "config": asdict(cfg), "metric": data.metric, "world_size": world,
+        "val": val, "test": test, "best_epoch": best_epoch, "epochs_run": len(step_times),
+        "n_params": int(sum(p.numel() for p in model.parameters())),
+        "systems": {
+            "stages_s": t_stages, "time_per_epoch_s": step_mean,
+            "edges_per_s": edges_global * cfg.depth / step_mean if step_mean > 0 else float("nan"),
+            "allreduce_s_per_step": comm_mean,
+            "comms_share": comm_mean / step_mean if step_mean > 0 else float("nan"),
+            "bytes_per_step_payload": payload, "bytes_per_step_wire": payload * 2.0 * (world - 1) / world,
+            "rho": stages.diagnostics.get("rho"), "edge_reduction": edge_reduction,
+        },
+        "stages": stages.diagnostics, "curves": curves,
+    }
+    save_json(Path(cfg.out_dir) / f"{result['key']}.json", result)
+    print(f"[ddp x{world}] {cfg.dataset} depth={cfg.depth} test={test:.4f} "
+          f"time/epoch={step_mean:.3f}s comms={result['systems']['comms_share']:.2%}")
+    return result
+
+
+def _local_entry(rank: int, world: int, port: int, cfg_dict: dict) -> None:
+    os.environ.update(MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port))
+    dist.init_process_group("gloo", rank=rank, world_size=world)
+    try:
+        worker(config_from_dict(cfg_dict))
+    finally:
+        dist.destroy_process_group()
+
+
+def spawn_local(cfg: RunConfig, world: int = 2, port: int = 29531) -> None:
+    """Run ``world`` processes on this machine (tests and single-node scaling runs)."""
+    import torch.multiprocessing as mp
+
+    mp.spawn(_local_entry, args=(world, port, asdict(cfg)), nprocs=world, join=True)
+
+
+def main(argv=None) -> None:
+    cfg = parse_args(argv)
+    dist.init_process_group(backend=os.environ.get("NHDP_DIST_BACKEND", "gloo"))
+    try:
+        worker(cfg)
+    finally:
+        dist.destroy_process_group()
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
