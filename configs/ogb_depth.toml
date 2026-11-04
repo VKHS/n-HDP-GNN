@@ -1,0 +1,20 @@
+# Tables 6-8 (OGB rows) -- depth profiles on the OGB graphs under the three regimes.
+# ogbn-products is trained in 16 parts (one gradient step per part, Cluster-GCN
+# style) to fit a CPU node; the partition is the same for every method.
+name = "ogb_depth"
+
+[base]
+hidden = 64
+heads = 4
+epochs = 300
+patience = 50
+eval_every = 5
+num_parts = 16
+partition = "auto"
+
+[grid]
+dataset = ["ogbn-arxiv", "ogbn-products", "ogbn-proteins"]
+regime = ["full", "semi", "scarce"]
+model = ["nhdp", "gcn", "gat", "appnp", "gcnii"]
+depth = [2, 4, 8, 10, 20, 30]
+seed = [0, 1, 2]

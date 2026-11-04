@@ -1,0 +1,18 @@
+# Table 5 -- clustering quality of 2-layer embeddings: k-means (k = #classes) on
+# L2-normalised final-layer embeddings, NMI and ARI (multi-label NMI/ARI for
+# ogbn-proteins, micro-averaged and dominant-label variants).  Every method is
+# run under the same protocol and seeds.
+name = "table5_clustering"
+
+[base]
+regime = "full"
+depth = 2
+hidden = 64
+heads = 4
+epochs = 500
+patience = 100
+
+[grid]
+dataset = ["cora", "citeseer", "pubmed", "photo", "ogbn-arxiv", "ogbn-products", "ogbn-proteins"]
+model = ["nhdp", "gcn", "gat", "sgc", "appnp", "arma", "gcnii", "graphunet"]
+seed = [0, 1, 2, 3, 4]

@@ -1,106 +1,128 @@
-<!-- -------------------------------------------------------------------- -->
+# n-HDP-GNN
 
-<!--  README.md — nHDP‑GNN                                               -->
+Reference implementation of
 
-<!--  Compatible with the manuscript: “Mitigating Over‑Smoothing in      -->
+> A. Khalili Sadaghiani and J. Nunez-Yanez,
+> **n-HDP-GNN: community-aware Bayesian clustering for over-smoothing-resilient, communication-efficient distributed GNNs**,
+> *The Journal of Supercomputing* 81, 1560 (2025). [doi:10.1007/s11227-025-08017-9](https://doi.org/10.1007/s11227-025-08017-9)
 
-<!--  Graph Neural Networks via Nested Hierarchical Dirichlet Clustering”-->
+n-HDP-GNN infers soft community responsibilities π with a nested hierarchical
+Dirichlet process over Louvain communities and uses them to gate message passing,
+P = Σ_c Diag(π_c) Ã_c. Node-, community- and global-level attention then aggregate
+features. The same partition-aligned structure organises distributed training on
+CPU clusters.
 
-<!-- -------------------------------------------------------------------- -->
+## Pipeline
 
-# nHDP‑GNN
+| Stage | Article | Module |
+|---|---|---|
+| A. Edge cut and nested Louvain communities | Sects. 3, 5, 10 | `partition.py`, `communities.py` |
+| B. Nested-HDP responsibilities π (variational inference, exact ELBO) | Sects. 4, 5, 7 | `nhdp.py` |
+| C. π-gated node attention, community and global attention | Sects. 5, 6, 10 | `gating.py`, `layers.py`, `model.py` |
+| Training: single process, or DistributedDataParallel on a CPU cluster | Sects. 8, 10 | `train.py`, `distributed.py` |
+| Diagnostics: MADGap, centroid gap, k-means NMI/ARI, ρ, r_E | Sects. 8, 9, 10 | `metrics.py`, `gating.py` |
+| Baselines: GCN, GAT, SGC, APPNP, ARMA, GCNII, PairNorm, DropEdge, Graph U-Net | Sect. 8 | `baselines.py` |
 
-**n‑HDP‑GNN: community‑aware Bayesian clustering for over‑smoothing‑resilient, communication‑efficient distributed GNNs**
-**Nested‑Hierarchical Dirichlet Clustering for Over‑Smoothing‑Resilient Graph Neural Networks**
+[docs/METHOD.md](docs/METHOD.md) gives:
 
+- every update equation;
+- the mapping from the article's symbols to code;
+- the behaviour of the gate at large depth;
+- the implementation choices the article leaves open.
 
-> A three‑stage Graph Attention Network that fuses **Louvain communities**, a **nested Dirichlet‑inspired hierarchy** and a **variational latent bottleneck**.  The architecture reproduces all experiments and figures reported in the companion paper *Mitigating Over‑Smoothing in Graph Neural Networks via Nested Hierarchical Dirichlet Clustering* and exceeds baseline performance on Cora, Citeseer, and PubMed.
+## Install
 
-<p align="center">
-  <img src="docs/architecture.svg" width="600" alt="Block diagram of the three‑stage nHDP‑GNN"/>
-</p>
-
-[![Paper](https://img.shields.io/badge/Paper-PDF-blue)](docs/oversmoothing_nhdp_gnn.pdf)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-green.svg)](https://www.python.org/)
-[![PyG](https://img.shields.io/badge/PyTorch%20Geometric-2.x-orange)](https://pytorch-geometric.readthedocs.io/)
-
----
-
-## 📰  Repository at a Glance
-
-| Folder / file                     | What it contains                                                     | Related paper section |
-| --------------------------------- | -------------------------------------------------------------------- | --------------------- |
-| `src/main.py`                     | End‑to‑end script to reproduce Tables 2 & 3 (Cora experiments)       | § 5.1, § 6.1          |
-| `src/models.py`                   | Implementation of **Enhanced Variational Hierarchical GAT**          | § 4 (Model)           |
-| `src/clustering.py`               | Louvain community detection + n‑HDP surrogate clustering             | § 3 (Pre‑processing)  |
-| `src/metrics.py`                  | Over‑smoothing / embedding distinctness metrics                      | § 6.3                 |
-| `notebooks/`                      | Jupyter notebooks that generate Fig. 7 (t‑SNE) & Fig. 9 (histograms) | Figures 7‑10          |
-| `docs/oversmoothing_nhdp_gnn.pdf` | **The manuscript (camera‑ready)**                                    | —                     |
-
-> **Tip:** every figure displayed in the paper can be regenerated with a single make target: `make plots` (see `Makefile`).
-
----
-
-## ✨  Key Contributions (mirrors the manuscript)
-
-| Contribution                                                                                 | Code component                                   | Where it appears in the PDF |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------- |
-| 1. **Hierarchical graph signal**: Louvain→n‑HDP labels concatenated to node features         | `clustering.py › build_hierarchy()`              | Fig. 3, Eq. (5–8)           |
-| 2. **Three‑stage multi‑head GAT** (local ▸ community ▸ global) with residual skip‑connection | `models.py › EnhancedVariationalHierarchicalGAT` | Fig. 4, Table 1             |
-| 3. **Variational bottleneck** (μ, σ, KL penalty β)                                           | same module                                      | Eq. (12–14)                 |
-| 4. **Auxiliary community loss** to keep embeddings discriminative                            | `losses.py`                                      | Eq. (15)                    |
-| 5. **Over‑smoothing diagnostics** (pairwise/inter/intra, variance, NMI/ARI)                  | `metrics.py`                                     | Fig. 8, Table 4             |
-
----
-
-## 🚀  Quick Start
-
-### 1．Clone & install
+Python ≥ 3.11.
 
 ```bash
-# Clone the repo
-$ git clone https://github.com/<user>/nHDP‑GNN.git
-$ cd nHDP‑GNN
-
-# (Optional) create a virtual environment
-$ python -m venv .venv
-$ source .venv/bin/activate
-
-# Install dependencies (CPU or CUDA wheel auto‑detected)
-$ pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cpu   # or a CUDA build
+pip install torch_geometric
+pip install -e ".[test]"
+pip install ogb pymetis igraph     # optional: OGB datasets, METIS partitions, fast Louvain
 ```
 
-### 2．Reproduce a paper table (Cora example)
+## Quick start
 
 ```bash
-$ python src/main.py \
-        --dataset cora \
-        --depth 3 \
-        --heads 4 \
-        --latent-dim 32 \
-        --beta 2e-5
+# Cora, public Planetoid split, depth 8
+python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/demo
+
+# a baseline under the same protocol
+python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --model gcnii --out_dir runs/demo
+
+# structure diagnostics without training: purity bounds, gate selectivity, rho, r_E
+python scripts/regime_report.py --datasets cora citeseer --parts 14
 ```
 
-The script prints accuracy, F1, AUC, and over‑smoothing metrics, then pops up the loss curves, t‑SNE, histograms and confusion‑matrix exactly as shown in Figures 6–10 of the manuscript.
+Training uses the training nodes only. The model is selected by early stopping on
+the validation metric, and the test metric is measured once with the selected
+state.
 
----
+Each run writes `<out_dir>/<key>.json` containing:
 
-## 🏗️  Some aspects of the Work
+- validation and test metrics;
+- timings;
+- Stage A/B diagnostics;
+- embedding diagnostics (the centroid gap of Eq. 28, topological MADGap, k-means NMI/ARI);
+- the training curve.
 
-* **Replace the n‑HDP surrogate** with a true nested Dirichlet Process using `pyro` – see wiki page *Advanced Clustering*.
-* **Scale to OGB datasets**: `--dataset ogbn-arxiv` works out‑of‑the‑box; increase `--depth` and adjust GPU memory.
-* **Synthetic graphs**: `scripts/gen_synthetic.py` generates the over‑smoothing test suite used in Section 6.4.
+`--save_embeddings true` also stores the node embeddings of every layer as `.npy` files.
 
----
+## Reproducing the article
 
-## 🔒  License
+`configs/` holds one sweep per table and figure, and [docs/REPRODUCING.md](docs/REPRODUCING.md) gives the commands:
 
-* **Code**: MIT — see [`LICENSE`](LICENSE).
-* **Manuscript & figures**: Creative Commons Attribution 4.0 — see [`docs/LICENSE-CC-BY.txt`](docs/LICENSE-CC-BY.txt).
+```bash
+python -m nhdp_gnn.sweep configs/table2_full.toml            # resumable; --shard i/n for job arrays
+python -m nhdp_gnn.report runs/table2_full --reference nhdp   # mean ± 95% CI over seeds, paired Wilcoxon
+```
 
----
+This release contains code and configurations, not results. The article's tables
+are regenerated by running the sweeps.
 
-## 🙏  Acknowledgements
+## Distributed training
 
-This project was supported by the Wallenberg AI, Autonomous Systems and Software Program (WASP).
+```bash
+torchrun --nnodes 14 --nproc-per-node 1 --rdzv-backend c10d --rdzv-endpoint MASTER:29500 \
+    -m nhdp_gnn.distributed --config configs/hpc_products.toml
+HOSTFILE=hosts.txt scripts/launch_cluster.sh configs/hpc_products.toml    # world sizes 1 2 4 8 14
+python -m nhdp_gnn.report runs/hpc --scaling                               # S(p), E(p), Comms%, bytes/step
+```
+
+## Tests
+
+```bash
+pytest -q
+```
+
+GitHub Actions runs the full suite on every push.
+
+- Without PyTorch, the inference, gating, partitioning, metric, split, sweep and report tests still run; the model, trainer and DDP tests are skipped.
+- The n-HDP tests check that the ELBO is monotone, that planted clusters are recovered, and that sharded and multi-rank inference reproduce the single-process result.
+
+## Repository history
+
+`legacy/` holds the scripts of the first release (May 2025), kept unchanged for
+provenance. All experiments use the `nhdp_gnn` package. See
+[legacy/README.md](legacy/README.md).
+
+## Citation
+
+```bibtex
+@article{khalilisadaghiani2025nhdpgnn,
+  author  = {Khalili Sadaghiani, Abdolvahab and Nunez-Yanez, Jose},
+  title   = {n-{HDP}-{GNN}: community-aware {B}ayesian clustering for over-smoothing-resilient,
+             communication-efficient distributed {GNN}s},
+  journal = {The Journal of Supercomputing},
+  volume  = {81},
+  pages   = {1560},
+  year    = {2025},
+  doi     = {10.1007/s11227-025-08017-9}
+}
+```
+
+## License and funding
+
+Code: MIT (see `LICENSE`). The article is open access under CC BY 4.0.
+This research was funded by the Wallenberg AI, Autonomous Systems and Software
+Program (WASP), funded by the Knut and Alice Wallenberg Foundation.

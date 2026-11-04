@@ -1,0 +1,75 @@
+# Table 1 -- component ablation.  The first five variants follow the article's
+# progression (HDP-GNN -> n-HDP-GNN -> + residual -> 1-head -> 2-head attention);
+# the remaining ones isolate the gate (see docs/METHOD.md, "Ablations").
+# Set [base] to the hyper-parameters and regime used for the article.
+name = "table1_ablation"
+
+[base]
+regime = "full"
+depth = 2
+hidden = 64
+epochs = 500
+patience = 100
+lr = 0.005
+weight_decay = 5e-4
+
+[grid]
+dataset = ["cora", "citeseer", "pubmed", "photo"]
+seed = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+[[variant]]
+name = "hdp-gnn"
+nhdp_levels = 2
+node_op = "gcn"
+community = false
+global_attn = false
+residual = "none"
+
+[[variant]]
+name = "nhdp-gnn"
+node_op = "gcn"
+community = false
+global_attn = false
+residual = "none"
+
+[[variant]]
+name = "nhdp-gnn+res"
+node_op = "gcn"
+community = false
+global_attn = false
+
+[[variant]]
+name = "nhdp-gnn+res+gat1"
+heads = 1
+community = false
+global_attn = false
+
+[[variant]]
+name = "nhdp-gnn+res+gat2"
+heads = 2
+community = false
+global_attn = false
+
+[[variant]]
+name = "full"
+heads = 4
+
+[[variant]]
+name = "full-gate-off"
+heads = 4
+gate = false
+
+[[variant]]
+name = "full-louvain-hard"
+heads = 4
+assign = "louvain"
+
+[[variant]]
+name = "full-random-partition"
+heads = 4
+assign = "random"
+
+[[variant]]
+name = "gat+res-no-hierarchy"
+heads = 4
+assign = "none"

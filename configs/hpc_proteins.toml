@@ -1,0 +1,16 @@
+# Tables 9-12 -- distributed runs (one process per worker node, gloo).
+# scripts/launch_cluster.sh runs this file at world sizes 1 2 4 8 14; repeat with
+# depth = 30 and with model = the competitor(s).  Every world size uses the same
+# deterministic partition method, so all methods share the partition.
+dataset = "ogbn-proteins"
+regime = "full"
+model = "nhdp"
+depth = 10
+hidden = 64
+heads = 4
+epochs = 200
+patience = 200
+eval_every = 10
+partition = "auto"
+threads = 6
+out_dir = "runs/hpc"

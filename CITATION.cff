@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the article below."
+title: "n-HDP-GNN"
+type: software
+version: 2.0.0
+license: MIT
+repository-code: "https://github.com/VKHS/n-HDP-GNN"
+authors:
+  - family-names: "Khalili Sadaghiani"
+    given-names: "Abdolvahab"
+    orcid: "https://orcid.org/0000-0003-4870-2768"
+  - family-names: "Nunez-Yanez"
+    given-names: "Jose"
+preferred-citation:
+  type: article
+  title: "n-HDP-GNN: community-aware Bayesian clustering for over-smoothing-resilient, communication-efficient distributed GNNs"
+  authors:
+    - family-names: "Khalili Sadaghiani"
+      given-names: "Abdolvahab"
+      orcid: "https://orcid.org/0000-0003-4870-2768"
+    - family-names: "Nunez-Yanez"
+      given-names: "Jose"
+  journal: "The Journal of Supercomputing"
+  volume: 81
+  start: 1560
+  year: 2025
+  doi: "10.1007/s11227-025-08017-9"

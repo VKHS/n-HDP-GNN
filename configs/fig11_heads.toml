@@ -1,0 +1,53 @@
+# Fig. 11 -- number of attention heads at depth 10 (8 channels per head).
+name = "fig11_heads"
+
+[base]
+regime = "full"
+depth = 10
+epochs = 500
+patience = 100
+
+[grid]
+dataset = ["cora", "citeseer", "pubmed", "photo", "ogbn-arxiv", "ogbn-products", "ogbn-proteins"]
+seed = [0, 1, 2, 3, 4]
+
+[[variant]]
+name = "heads-1"
+heads = 1
+hidden = 8
+[[variant]]
+name = "heads-2"
+heads = 2
+hidden = 16
+[[variant]]
+name = "heads-4"
+heads = 4
+hidden = 32
+[[variant]]
+name = "heads-6"
+heads = 6
+hidden = 48
+[[variant]]
+name = "heads-8"
+heads = 8
+hidden = 64
+[[variant]]
+name = "heads-10"
+heads = 10
+hidden = 80
+[[variant]]
+name = "heads-12"
+heads = 12
+hidden = 96
+[[variant]]
+name = "heads-14"
+heads = 14
+hidden = 112
+[[variant]]
+name = "heads-16"
+heads = 16
+hidden = 128
+[[variant]]
+name = "heads-18"
+heads = 18
+hidden = 144

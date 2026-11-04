@@ -1,0 +1,20 @@
+# Table 2 -- fully supervised (stratified 60/20/20 per seed): accuracy vs depth.
+# The same runs also produce the embedding diagnostics of Tables 6-8
+# (centroid gap = the article's Eq. 28, and the topological MADGap).
+# Set [base] to the hyper-parameters used for the article.
+name = "table2_full"
+
+[base]
+regime = "full"
+hidden = 64
+heads = 4
+epochs = 500
+patience = 100
+lr = 0.005
+weight_decay = 5e-4
+
+[grid]
+dataset = ["cora", "citeseer", "pubmed", "photo"]
+model = ["nhdp", "gcn", "gat", "sgc", "appnp", "arma", "gcnii", "pairnorm", "dropedge", "graphunet"]
+depth = [2, 4, 8, 10, 20, 30]
+seed = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
