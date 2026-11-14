@@ -33,6 +33,33 @@ Useful options:
   python -m nhdp_gnn.sweep configs/table2_full.toml --shard ${SLURM_ARRAY_TASK_ID}/64
   ```
 
+`scripts/make_tables.py CONFIG --out results/<name>` writes a sweep's tables in the
+article's layout (`README.md`), one CSV per reported value, all run results
+(`runs.jsonl.gz`) and the number of expected, completed and missing runs. Cells are
+computed from completed runs only; missing runs are listed, never imputed.
+
+## Running sweeps on GitHub Actions
+
+`.github/workflows/reproduce.yml` runs one sweep on GitHub-hosted CPU runners
+(4 vCPUs each; every job runs four shards with one torch thread each):
+
+```bash
+gh workflow run reproduce.yml -f config=configs/table1_ablation.toml -f jobs=16
+gh workflow run reproduce.yml -f config=configs/table2_full.toml -f jobs=64 -f only="seed=0|1|2"
+```
+
+The aggregate job writes `results/<name>/` with `scripts/make_tables.py`, shows the
+tables in the run summary, uploads them as an artifact and, with `publish` (default),
+pushes them to the branch `results/<name>`. A job stops after 6 hours; runs it did
+not finish are listed as missing, and re-running the workflow with a narrower
+`only` filter completes them. OGB-scale and multi-node runs need a cluster.
+
+## Measured artifacts without training
+
+`python -m nhdp_gnn.artifacts` (numpy only) measures stages A and B, the partition
+study and the training-free depth study on the five small graphs; `scripts/make_figures.py`
+draws the figures and `artifacts/SUMMARY.md`. See [artifacts/README.md](../artifacts/README.md).
+
 ## Protocol
 
 * **Regimes** (`nhdp_gnn/splits.py`):

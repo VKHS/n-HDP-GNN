@@ -132,8 +132,11 @@ below uniformly across layers, which holds whenever the attention logits are bou
 Consequences:
 
 1. The gate does not remove over-smoothing. It changes the limit from one consensus
-   per connected component of the graph to one per gate-connected component, and
-   lowers the convergence rate through the spectral gap of each block.
+   per connected component of the graph to one per gate-connected component. The
+   rate of convergence within a block is set by that block's spectral gap; blocks
+   confined to communities usually mix faster than the whole graph, so features can
+   collapse within a block at a smaller depth. The training-free depth study in
+   `artifacts/` (`fig_operator_depth.png`) measures this for P^L X.
 2. With hard Louvain gating (`assign = "louvain"`) the bound is the community purity.
    `scripts/regime_report.py` prints it per dataset; when it lies below the accuracy
    of shallow models, accuracy retained at depth 20-30 must come from the residual,

@@ -1,0 +1,168 @@
+name: reproduce
+
+# Runs one sweep (a table or figure of the article) on GitHub-hosted CPU runners,
+# then aggregates the per-run results with scripts/make_tables.py.
+#
+# Start it from the Actions tab ("Run workflow"), or:
+#   gh workflow run reproduce.yml -f config=configs/table1_ablation.toml -f jobs=16
+#
+# Each job runs 4 sweep shards in parallel (one per vCPU, one torch thread each).
+# Results are uploaded as the artifact "results-<sweep name>" and, if publish is
+# true, pushed to the branch results/<sweep name> (one commit containing only the
+# results/ directory).  Multi-node scaling (Tables 9-12) and OGB-scale runs need a
+# cluster: see scripts/launch_cluster.sh and docs/REPRODUCING.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "sweep file, e.g. configs/table1_ablation.toml"
+        required: true
+        default: "configs/table1_ablation.toml"
+      jobs:
+        description: "parallel jobs (each runs 4 shards); 1-64"
+        required: true
+        default: "16"
+      only:
+        description: "optional filter, e.g. dataset=cora,seed=0|1|2"
+        required: false
+        default: ""
+      set:
+        description: "optional overrides, space separated key=value (e.g. epochs=200)"
+        required: false
+        default: ""
+      publish:
+        description: "push results to branch results/<sweep name>"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reproduce-${{ inputs.config }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      name: ${{ steps.plan.outputs.name }}
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          CONFIG: ${{ inputs.config }}
+          JOBS: ${{ inputs.jobs }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, tomllib
+          jobs = max(1, min(64, int(os.environ["JOBS"])))
+          name = tomllib.load(open(os.environ["CONFIG"], "rb"))["name"]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"matrix={json.dumps({'job': list(range(jobs))})}\n")
+              fh.write(f"name={name}\nshards={4 * jobs}\n")
+          EOF
+
+  sweep:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torch_geometric ogb
+          pip install -e .
+      - uses: actions/cache@v4
+        with:
+          path: data
+          key: datasets-v1-${{ hashFiles('nhdp_gnn/data.py') }}
+          restore-keys: datasets-v1-
+      - name: Run 4 shards
+        env:
+          CONFIG: ${{ inputs.config }}
+          ONLY: ${{ inputs.only }}
+          SET: ${{ inputs.set }}
+          SHARDS: ${{ needs.plan.outputs.shards }}
+          JOB: ${{ matrix.job }}
+        run: |
+          args=(--set threads=1)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          for kv in $SET; do args+=(--set "$kv"); done
+          status=0
+          for j in 0 1 2 3; do
+            python -m nhdp_gnn.sweep "$CONFIG" --shard $((4 * JOB + j))/"$SHARDS" "${args[@]}" > "shard-$j.log" 2>&1 &
+          done
+          for j in 0 1 2 3; do wait -n || status=1; done
+          tail -n 3 shard-*.log
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runs-${{ matrix.job }}
+          path: |
+            runs/
+            shard-*.log
+          if-no-files-found: ignore
+          retention-days: 30
+
+  aggregate:
+    needs: [plan, sweep]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: runs-*
+          path: collected
+          merge-multiple: true
+      - name: Tables
+        env:
+          CONFIG: ${{ inputs.config }}
+          ONLY: ${{ inputs.only }}
+          SET: ${{ inputs.set }}
+          NAME: ${{ needs.plan.outputs.name }}
+        run: |
+          args=()
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          for kv in $SET; do args+=(--set "$kv"); done
+          python scripts/make_tables.py "$CONFIG" --runs collected/runs --out "results/$NAME" "${args[@]}"
+          cat "results/$NAME/README.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ needs.plan.outputs.name }}
+          path: results/
+          retention-days: 90
+      - name: Publish to results branch
+        if: inputs.publish
+        env:
+          NAME: ${{ needs.plan.outputs.name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp -r results /tmp/results
+          git checkout --orphan "results/$NAME"
+          git rm -rq --cached .
+          git clean -fdxq
+          mkdir -p results && cp -r /tmp/results/. results/
+          git add results
+          git commit -qm "Results of $NAME from $GITHUB_SHA ($RUN_URL)"
+          git push -f origin "results/$NAME"
