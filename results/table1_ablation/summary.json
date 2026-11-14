@@ -1,0 +1,42 @@
+{
+  "sweep": "configs/table1_ablation.toml",
+  "name": "table1_ablation",
+  "only": {},
+  "overrides": {},
+  "expected": 400,
+  "completed": 400,
+  "missing": 0,
+  "missing_keys": [],
+  "code_commits": [
+    "4f00db1371643ba63fd5a37ce4d9e24d08bf1f24"
+  ],
+  "base": {
+    "regime": "full",
+    "depth": 2,
+    "hidden": 64,
+    "epochs": 500,
+    "patience": 100,
+    "lr": 0.005,
+    "weight_decay": 0.0005
+  },
+  "grid": {
+    "dataset": [
+      "cora",
+      "citeseer",
+      "pubmed",
+      "photo"
+    ],
+    "seed": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  }
+}
