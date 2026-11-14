@@ -86,8 +86,9 @@ Each statement below can be checked in [`SUMMARY.md`](SUMMARY.md) and the JSON f
    0.74-0.86. The hard n-HDP gate has a high bound (0.75-0.94) only because it splits
    the graph into thousands of small components (Cora: 1489).
 
-5. **Training-free depth study.** With the normalised adjacency, the probe
-   reproduces SGC at L = 2 (Cora 80.5%, CiteSeer 72.4%, PubMed 78.8%), and its best
+5. **Training-free depth study.** With the normalised adjacency at L = 2 the probe
+   is within 0.5 points of the published SGC accuracy (Cora 80.5% vs 81.0%, CiteSeer
+   72.4% vs 71.9%, PubMed 78.8% vs 78.9%; Wu et al. 2019, Table 2), and its best
    depth is 2 or 4 on every graph.
    * The n-HDP top-k gate gives a lower accuracy than the normalised adjacency at
      every depth from 1 to 64 on all five graphs, and it falls far below at depth 64
