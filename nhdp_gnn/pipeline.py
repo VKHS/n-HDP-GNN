@@ -15,6 +15,7 @@ concurrent sweep shards can share one cache directory.
 from __future__ import annotations
 
 import os
+import time
 import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -123,6 +124,7 @@ def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduc
 
     N, ei = data.num_nodes, data.edge_index
     rng_seed = cfg.seed
+    t_start = time.perf_counter()
     parts = np.asarray(parts, dtype=np.int64) if parts is not None else compute_partition(data, cfg)
 
     sel = np.ones(N, dtype=bool) if only_part is None else parts == only_part
@@ -134,9 +136,11 @@ def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduc
         nc = nested_communities(ei, N, seed=rng_seed, resolution=cfg.louvain_resolution,
                                 backend=cfg.louvain_backend, parts=sub_parts if cfg.num_parts > 1 else None)
     diag = {"num_parts": cfg.num_parts, "louvain_levels": nc.levels,
-            "num_communities": nc.num_communities, "num_super_communities": nc.num_super}
+            "num_communities": nc.num_communities, "num_super_communities": nc.num_super,
+            "time_stage_a_s": time.perf_counter() - t_start}
 
     R = None
+    t_b = time.perf_counter()
     if cfg.assign == "nhdp":
         Z = reduce_features(_smooth(data, cfg.feature_hops), cfg.feature_dim, seed=rng_seed)
         ncfg = cfg.nhdp
@@ -154,7 +158,8 @@ def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduc
             full[sel] = R
             R = full
         diag.update({"nhdp_iters": res.n_iter, "nhdp_converged": res.converged, "nhdp_effective_k": res.effective_k,
-                     "nhdp_elbo_final": res.elbo_trace[-1] if res.elbo_trace else float("nan")})
+                     "nhdp_elbo_final": res.elbo_trace[-1] if res.elbo_trace else float("nan"),
+                     "nhdp_elbo_trace": [float(v) for v in res.elbo_trace]})
     elif cfg.assign in ("louvain", "random"):
         idx = np.flatnonzero(sel)
         lab = np.zeros(N, dtype=np.int64)
@@ -167,6 +172,7 @@ def run_stages(data, cfg: PipelineConfig, cache_dir: str | None = "cache", reduc
         R[~sel] = 0.0
     elif cfg.assign != "none":
         raise ValueError(f"unknown assign mode {cfg.assign!r}")
+    diag["time_stage_b_s"] = time.perf_counter() - t_b
 
     if R is not None:
         # The model has no parameter that depends on the number of columns, so each

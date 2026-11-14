@@ -33,13 +33,9 @@ def _sym_adjacency(edge_index: np.ndarray, num_nodes: int) -> sparse.csr_matrix:
     return ((A + A.T) > 0).astype(np.float64).tocsr()
 
 
-def madgap(H: np.ndarray, edge_index: np.ndarray, num_nodes: int, neighbor_hops: int = 3,
-           remote_hops: int = 8, max_sources: int = 1000, max_targets: int = 20000,
-           seed: int = 0, budget: float = 5e7) -> float:
-    """Topological MADGap (Chen et al. 2020) on a seeded sample of source/target nodes.
-
-    Unreachable pairs count as remote, as in the original mask construction.
-    """
+def madgap_pairs(edge_index: np.ndarray, num_nodes: int, neighbor_hops: int = 3, remote_hops: int = 8,
+                 max_sources: int = 1000, max_targets: int = 20000, seed: int = 0, budget: float = 5e7) -> dict:
+    """Seeded source/target sample and its neighbour/remote masks; reusable across embeddings of one graph."""
     rng = np.random.default_rng(seed)
     A = _sym_adjacency(edge_index, num_nodes)
     n_src = int(min(max_sources, num_nodes, max(16, budget // num_nodes)))
@@ -47,8 +43,13 @@ def madgap(H: np.ndarray, edge_index: np.ndarray, num_nodes: int, neighbor_hops:
     targets = (np.arange(num_nodes) if num_nodes <= max_targets
                else np.sort(rng.choice(num_nodes, size=max_targets, replace=False)))
     hops = csgraph.shortest_path(A, directed=False, unweighted=True, indices=sources)[:, targets]
+    return {"sources": sources, "targets": targets, "remote": hops >= remote_hops,
+            "neighbor": (hops >= 1) & (hops <= neighbor_hops)}
+
+
+def madgap_from_pairs(H: np.ndarray, pairs: dict) -> float:
     Hn = _l2n(H)
-    D = np.clip(1.0 - Hn[sources] @ Hn[targets].T, 0.0, 2.0)
+    D = np.clip(1.0 - Hn[pairs["sources"]] @ Hn[pairs["targets"]].T, 0.0, 2.0)
 
     def mad(mask: np.ndarray) -> float:
         Dm = D * mask
@@ -56,7 +57,18 @@ def madgap(H: np.ndarray, edge_index: np.ndarray, num_nodes: int, neighbor_hops:
         node = np.where(cnt > 0, Dm.sum(1) / np.maximum(cnt, 1), 0.0)
         return float(node[node > 0].mean()) if (node > 0).any() else 0.0
 
-    return mad(hops >= remote_hops) - mad((hops >= 1) & (hops <= neighbor_hops))
+    return mad(pairs["remote"]) - mad(pairs["neighbor"])
+
+
+def madgap(H: np.ndarray, edge_index: np.ndarray, num_nodes: int, neighbor_hops: int = 3,
+           remote_hops: int = 8, max_sources: int = 1000, max_targets: int = 20000,
+           seed: int = 0, budget: float = 5e7) -> float:
+    """Topological MADGap (Chen et al. 2020) on a seeded sample of source/target nodes.
+
+    Unreachable pairs count as remote, as in the original mask construction.
+    """
+    return madgap_from_pairs(H, madgap_pairs(edge_index, num_nodes, neighbor_hops, remote_hops, max_sources,
+                                             max_targets, seed, budget))
 
 
 def centroid_gap(H: np.ndarray, y: np.ndarray) -> float:

@@ -1,23 +1,37 @@
-"""Dataset loading: Cora, Citeseer, PubMed, Amazon Photo, ogbn-arxiv/products/proteins, synthetic.
+"""Dataset loading: Cora, Citeseer, PubMed, Amazon Photo/Computers, ogbn-arxiv/products/proteins, synthetic.
 
 Everything is returned as numpy arrays in a ``GraphData``; edges are undirected
 (both directions stored), without self-loops and without duplicates.
 Bag-of-words features (Planetoid, Amazon) are row-normalised.
 ogbn-proteins has no node features; they are the mean of the 8-dimensional
 features of incident edges (the usual OGB practice).
+
+Planetoid and Amazon graphs are read from the original raw files (the files
+PyTorch Geometric downloads, stored in the same directory layout), with the same
+processing as PyG's ``Planetoid`` and ``Amazon`` datasets; tests/test_torch.py
+checks the equality.  They therefore load without PyTorch, so stages A and B run
+on real graphs in a numpy-only environment.  The pickled Planetoid files are
+read with an unpickler that only admits the numpy/scipy classes they contain.
 """
 from __future__ import annotations
 
+import importlib.util
 import os
+import pickle
+import shutil
 import sys
+import urllib.request
 from contextlib import contextmanager
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
 PLANETOID = {"cora": "Cora", "citeseer": "CiteSeer", "pubmed": "PubMed"}
 AMAZON = {"photo": "Photo", "computers": "Computers"}
 OGB = ("ogbn-arxiv", "ogbn-products", "ogbn-proteins")
+PLANETOID_URL = "https://github.com/kimiyoung/planetoid/raw/master/data"      # as in PyG
+AMAZON_URL = "https://github.com/shchur/gnn-benchmark/raw/master/data/npz"   # as in PyG
 
 
 @dataclass
@@ -63,6 +77,98 @@ def _masks(n: int, idx_dict) -> tuple:
         m[np.asarray(idx_dict[key]).reshape(-1)] = True
         out.append(m)
     return tuple(out)
+
+
+def _fetch(url: str, path: Path) -> Path:
+    """Download ``url`` to ``path`` unless it exists (atomic rename, so no partial files remain)."""
+    if path.exists():
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + f".{os.getpid()}.part")
+    with urllib.request.urlopen(url, timeout=300) as response, open(tmp, "wb") as fh:
+        shutil.copyfileobj(response, fh)
+    os.replace(tmp, path)
+    return path
+
+
+# (module, name) pairs that occur in the Planetoid pickles, in Python 2 and 3 spellings
+_PICKLE_ALLOWED = {
+    ("numpy.core.multiarray", "_reconstruct"), ("numpy.core.multiarray", "scalar"),
+    ("numpy._core.multiarray", "_reconstruct"), ("numpy._core.multiarray", "scalar"),
+    ("numpy", "ndarray"), ("numpy", "dtype"),
+    ("scipy.sparse.csr", "csr_matrix"), ("scipy.sparse", "csr_matrix"),
+    ("collections", "defaultdict"),
+    ("__builtin__", "object"), ("builtins", "object"), ("__builtin__", "list"), ("builtins", "list"),
+    ("copy_reg", "_reconstructor"), ("copyreg", "_reconstructor"),
+    ("_codecs", "encode"),     # bytes in protocol-2 pickles written by Python 3 (no code execution)
+}
+
+
+class _DatasetUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if (module, name) not in _PICKLE_ALLOWED:
+            raise pickle.UnpicklingError(f"refusing to load {module}.{name} from a dataset file")
+        if module.startswith("numpy.core") and importlib.util.find_spec("numpy._core") is not None:
+            module = "numpy._core" + module[len("numpy.core"):]      # numpy >= 2
+        if module == "scipy.sparse.csr":
+            module = "scipy.sparse"
+        return super().find_class(module, name)
+
+
+def _dense32(m) -> np.ndarray:
+    return np.asarray(m.todense() if hasattr(m, "todense") else m, dtype=np.float32)
+
+
+def read_planetoid(root: str | Path, name: str):
+    """Features, labels, raw edge list and public split, processed as PyG's ``read_planetoid_data``."""
+    raw = Path(root) / "planetoid" / PLANETOID[name] / "raw"
+    items = {}
+    for part in ("x", "tx", "allx", "y", "ty", "ally", "graph"):
+        with open(_fetch(f"{PLANETOID_URL}/ind.{name}.{part}", raw / f"ind.{name}.{part}"), "rb") as fh:
+            items[part] = _DatasetUnpickler(fh, encoding="latin1").load()
+    test_index = np.loadtxt(_fetch(f"{PLANETOID_URL}/ind.{name}.test.index", raw / f"ind.{name}.test.index"),
+                            dtype=np.int64).reshape(-1)
+    tx, allx = _dense32(items["tx"]), _dense32(items["allx"])
+    y, ty, ally = _dense32(items["y"]), _dense32(items["ty"]), _dense32(items["ally"])
+    sorted_test = np.sort(test_index)
+    if name == "citeseer":       # isolated test nodes: test indices are not consecutive
+        n_ext = int(test_index.max() - test_index.min()) + 1
+        tx_ext = np.zeros((n_ext, tx.shape[1]), dtype=np.float32)
+        tx_ext[sorted_test - test_index.min()] = tx
+        ty_ext = np.zeros((n_ext, ty.shape[1]), dtype=np.float32)
+        ty_ext[sorted_test - test_index.min()] = ty
+        tx, ty = tx_ext, ty_ext
+    x = np.concatenate([allx, tx])
+    x[test_index] = x[sorted_test]
+    labels = np.concatenate([ally, ty]).argmax(1).astype(np.int64)
+    labels[test_index] = labels[sorted_test]
+    n = labels.shape[0]
+    graph = items["graph"]
+    rows = np.fromiter((u for u, nbrs in graph.items() for _ in nbrs), dtype=np.int64)
+    cols = np.fromiter((v for nbrs in graph.values() for v in nbrs), dtype=np.int64)
+    if rows.size and max(rows.max(), cols.max()) >= n:
+        raise ValueError(f"{name}: edge endpoint outside the {n} nodes")
+    masks = []
+    for idx in (np.arange(y.shape[0]), np.arange(y.shape[0], min(y.shape[0] + 500, n)), test_index):
+        m = np.zeros(n, dtype=bool)
+        m[idx] = True
+        masks.append(m)
+    return x, labels, np.stack([rows, cols]), tuple(masks)
+
+
+def read_amazon(root: str | Path, name: str):
+    """Binary features, labels and raw edge list, processed as PyG's ``read_npz``."""
+    import scipy.sparse as sp
+
+    file = f"amazon_electronics_{name}.npz"
+    path = _fetch(f"{AMAZON_URL}/{file}", Path(root) / "amazon" / AMAZON[name] / "raw" / file)
+    with np.load(path, allow_pickle=False) as f:
+        x = sp.csr_matrix((f["attr_data"], f["attr_indices"], f["attr_indptr"]),
+                          shape=tuple(f["attr_shape"])).toarray().astype(np.float32)
+        adj = sp.csr_matrix((f["adj_data"], f["adj_indices"], f["adj_indptr"]), shape=tuple(f["adj_shape"])).tocoo()
+        labels = np.asarray(f["labels"]).astype(np.int64)
+    x[x > 0] = 1.0
+    return x, labels, np.stack([adj.row, adj.col]).astype(np.int64)
 
 
 def _interactive() -> bool:
@@ -118,18 +224,12 @@ def load_dataset(name: str, root: str = "data", synthetic: dict | None = None) -
                          int(g["num_classes"]), community=g["community"])
 
     if name in PLANETOID or name in AMAZON:
-        from torch_geometric.datasets import Amazon, Planetoid
-
         if name in PLANETOID:
-            data = Planetoid(f"{root}/planetoid", PLANETOID[name])[0]
-            public = tuple(m.numpy().astype(bool) for m in (data.train_mask, data.val_mask, data.test_mask))
+            x, y, ei, public = read_planetoid(root, name)
         else:
-            data = Amazon(f"{root}/amazon", AMAZON[name])[0]
-            public = None
-        x = _row_normalise(data.x.numpy())
-        y = data.y.numpy().astype(np.int64)
-        return GraphData(name, x, y, undirected(data.edge_index.numpy(), x.shape[0]),
-                         int(y.max()) + 1, public_split=public)
+            (x, y, ei), public = read_amazon(root, name), None
+        x = _row_normalise(x)
+        return GraphData(name, x, y, undirected(ei, x.shape[0]), int(y.max()) + 1, public_split=public)
 
     if name in OGB:
         from ogb.nodeproppred import PygNodePropPredDataset

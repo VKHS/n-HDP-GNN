@@ -130,6 +130,28 @@ def test_part_statistics_normalises_the_part_and_keeps_running_buffers():
     assert not bn.training and bn.momentum == 0.1
 
 
+@pytest.mark.parametrize("name", ["cora", "citeseer", "pubmed", "photo", "computers"])
+def test_raw_readers_match_pyg(name):
+    """load_dataset reads the raw files itself; the result must equal PyG's processing of the same files."""
+    from torch_geometric.datasets import Amazon, Planetoid
+
+    from nhdp_gnn.data import AMAZON, PLANETOID, _row_normalise, undirected
+
+    try:
+        ours = load_dataset(name, "data")
+    except OSError as exc:
+        pytest.skip(f"download unavailable: {exc}")
+    if name in PLANETOID:
+        ref = Planetoid("data/planetoid", PLANETOID[name])[0]
+        for mine, theirs in zip(ours.public_split, (ref.train_mask, ref.val_mask, ref.test_mask)):
+            assert np.array_equal(mine, theirs.numpy())
+    else:
+        ref = Amazon("data/amazon", AMAZON[name])[0]
+    assert np.array_equal(ours.x, _row_normalise(ref.x.numpy()))
+    assert np.array_equal(ours.y, ref.y.numpy())
+    assert np.array_equal(ours.edge_index, undirected(ref.edge_index.numpy(), ours.num_nodes))
+
+
 class _NotAllowlisted:                                       # module level, so it unpickles by reference
     pass
 
