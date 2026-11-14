@@ -27,6 +27,8 @@ def test_sweep_sizes_and_sharding():
     assert sum(len(p) for p in parts) == len(runs)
     only = select(runs, only={"model": "nhdp", "dataset": "cora"})
     assert len(only) == 6 * 10 and all(c.model == "nhdp" for c in only)
+    three = select(runs, only={"model": "nhdp", "dataset": "cora", "seed": "0|1|2"})   # alternatives
+    assert len(three) == 6 * 3 and {c.seed for c in three} == {0, 1, 2}
     abl = expand(tomllib.load(open("configs/table1_ablation.toml", "rb")))
     assert len(abl) == 4 * 10 * 10 and {r["tag"] for r in abl} >= {"hdp-gnn", "full", "full-gate-off"}
 
@@ -58,3 +60,21 @@ def test_scaling_table_speedup(tmp_path):
         (tmp_path / f"p{p}.json").write_text(json.dumps(res))
     md = scaling_table(load_results(tmp_path))
     assert "| 2 | 4.400 | 1.82 | 0.91 |" in md
+
+
+def test_code_version_names_the_checked_out_commit():
+    import subprocess
+    from pathlib import Path
+
+    import nhdp_gnn
+    from nhdp_gnn.utils import code_version
+
+    root = Path(nhdp_gnn.__file__).resolve().parent
+    try:
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True,
+                              check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        head = None
+    v = code_version()
+    if head is not None:
+        assert v["code_commit"] == head and isinstance(v["code_dirty"], bool)

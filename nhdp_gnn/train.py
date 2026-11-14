@@ -31,7 +31,7 @@ from .losses import supervised_loss
 from .metrics import centroid_gap, kmeans_nmi_ari, madgap
 from .pipeline import build_batches, run_stages
 from .splits import regime_split
-from .utils import save_json, set_seed
+from .utils import code_version, save_json, set_seed
 
 
 def build_model(cfg: RunConfig, in_dim: int, out_dim: int, aux_classes: int = 0):
@@ -182,7 +182,7 @@ def run(cfg: RunConfig, verbose: bool = True) -> dict:
     want_layers = cfg.layer_profile and data.num_nodes <= 200_000 or cfg.save_embeddings
     logits, layers = predict(model, batches, data.num_nodes, all_layers=want_layers)
     result = {
-        "key": cfg.key(), "config": asdict(cfg), "metric": data.metric,
+        "key": cfg.key(), "config": asdict(cfg), "metric": data.metric, **code_version(),
         "val": score(logits, y_np, val_mask, data.multilabel),
         "test": score(logits, y_np, test_mask, data.multilabel),
         "best_epoch": best_epoch, "epochs_run": len(epoch_times),

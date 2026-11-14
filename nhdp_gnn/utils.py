@@ -1,15 +1,38 @@
 """Small helpers shared by the pipeline: seeding, hashing, timing, JSON output."""
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
 import random
+import subprocess
 import time
 from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
+
+
+@functools.lru_cache(maxsize=1)
+def code_version() -> dict:
+    """Git commit of this package and whether its files differ from it.
+
+    Stored with every run result.  Outside a git checkout the commit falls back to
+    ``$GITHUB_SHA`` and ``code_dirty`` is None.
+    """
+    here = Path(__file__).resolve().parent
+
+    def git(*args):
+        try:
+            return subprocess.run(["git", *args], cwd=here, capture_output=True, text=True, check=True,
+                                  timeout=20).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+    status = git("status", "--porcelain", "--untracked-files=no", "--", ".")
+    return {"code_commit": git("rev-parse", "HEAD") or os.environ.get("GITHUB_SHA"),
+            "code_dirty": None if status is None else bool(status)}
 
 
 def set_seed(seed: int) -> None:

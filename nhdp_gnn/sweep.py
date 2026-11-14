@@ -2,12 +2,14 @@
 
     python -m nhdp_gnn.sweep configs/table2_full.toml --dry-run
     python -m nhdp_gnn.sweep configs/table2_full.toml --only model=nhdp,dataset=cora --shard 3/16
+    python -m nhdp_gnn.sweep configs/table2_full.toml --only "seed=0|1|2"
 
 A sweep file has ``name``, a ``[base]`` table of RunConfig values, a ``[grid]``
 table of lists (Cartesian product) and optional ``[[variant]]`` tables (named
 overrides, stored as the run's ``tag``).  Results are written to
 runs/<name>/<key>.json; runs whose result exists are skipped, so a sweep can be
-resumed, or split across cluster jobs with --shard i/n.
+resumed, or split across cluster jobs with --shard i/n.  An ``--only`` value may
+list alternatives separated by ``|``.
 """
 from __future__ import annotations
 
@@ -43,9 +45,10 @@ def expand(spec: dict) -> list[dict]:
 def select(runs: list[dict], only: dict | None = None, shard: tuple[int, int] = (0, 1),
            overrides: dict | None = None) -> list[RunConfig]:
     i, n = shard
+    allowed = {k: str(v).split("|") for k, v in (only or {}).items()}
     out = []
     for idx, d in enumerate(runs):
-        if idx % n != i or any(str(d.get(k)) != v for k, v in (only or {}).items()):
+        if idx % n != i or any(str(d.get(k)) not in vs for k, vs in allowed.items()):
             continue
         out.append(config_from_dict({**d, **(overrides or {})}))
     return out
@@ -55,7 +58,7 @@ def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--only", default="", help="comma-separated key=value filters")
+    ap.add_argument("--only", default="", help="comma-separated key=value filters; a value may be a|b|c")
     ap.add_argument("--shard", default="0/1", help="i/n: run every n-th configuration starting at i")
     ap.add_argument("--set", action="append", default=[], help="key=value override for every run")
     args = ap.parse_args(argv)
