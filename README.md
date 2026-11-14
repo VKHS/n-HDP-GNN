@@ -95,7 +95,7 @@ CPU runners and publishes its tables to the branch `results/<sweep>`.
 |---|---|---|
 | Stages A and B on Cora, CiteSeer, PubMed, Photo, Computers: n-HDP convergence, community and cluster purity, gate selectivity, purity bounds of the infinite-depth limit, partition study (ρ, ρ_g, r_E) | [`artifacts/`](artifacts/README.md) | measured, included |
 | Training-free depth study: linear probe, centroid gap and MADGap of PᴸX for the normalised adjacency and the gated operators | [`artifacts/`](artifacts/README.md) | measured, included |
-| Trained models: Tables 1-8 and Fig. 11 (Cora, CiteSeer, PubMed, Photo) | `results/<sweep>/` | produced by the sweeps (workflow or cluster); not included yet |
+| Trained models: Tables 1-8 and Fig. 11 (Cora, CiteSeer, PubMed, Photo) | [`results/`](results/README.md) | Table 1 complete (400 runs); Tables 2-5 and Fig. 11 running on GitHub Actions |
 | Multi-node scaling (Tables 9-12) and OGB-scale depth runs | `results/` | need a CPU cluster (`scripts/launch_cluster.sh`); not included yet |
 
 Every number under `artifacts/` was produced by the command recorded in
