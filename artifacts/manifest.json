@@ -1,0 +1,18 @@
+{
+  "command": "python -m nhdp_gnn.artifacts --out artifacts",
+  "code_commit": "2a27f9437393b6dfb4638abef91ca4a6ed920648",
+  "uncommitted_changes_in_nhdp_gnn": false,
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpu_count": 2,
+  "libraries": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "sklearn": "1.9.1",
+    "networkx": "3.7"
+  },
+  "louvain_backend": "networkx",
+  "metis_available": false,
+  "total_time_s": 906.0923348429999,
+  "generated_utc": "2026-11-14T21:29:15Z"
+}
