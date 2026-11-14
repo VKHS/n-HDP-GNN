@@ -3,14 +3,18 @@ name: reproduce
 # Runs one sweep (a table or figure of the article) on GitHub-hosted CPU runners,
 # then aggregates the per-run results with scripts/make_tables.py.
 #
-# Start it from the Actions tab ("Run workflow"), or:
-#   gh workflow run reproduce.yml -f config=configs/table1_ablation.toml -f jobs=16
+# Start it in either of two ways:
+#   * Actions tab -> "reproduce" -> "Run workflow" (choose the sweep file), or
+#     gh workflow run reproduce.yml -f config=configs/table1_ablation.toml
+#   * push any commit to a branch named reproduce/<sweep name>, e.g.
+#     git push origin HEAD:reproduce/table1_ablation   (runs configs/table1_ablation.toml)
 #
-# Each job runs 4 sweep shards in parallel (one per vCPU, one torch thread each).
-# Results are uploaded as the artifact "results-<sweep name>" and, if publish is
-# true, pushed to the branch results/<sweep name> (one commit containing only the
-# results/ directory).  Multi-node scaling (Tables 9-12) and OGB-scale runs need a
-# cluster: see scripts/launch_cluster.sh and docs/REPRODUCING.md.
+# Each job runs 4 sweep shards in parallel (one per vCPU, one thread each).  The
+# number of jobs defaults to one per 20 runs (at most 256).  Results are uploaded
+# as the artifact "results-<sweep name>" and, if publish is true, pushed to the
+# branch results/<sweep name> (one commit containing only the results/ directory).
+# Multi-node scaling (Tables 9-12) and OGB-scale runs need a cluster: see
+# scripts/launch_cluster.sh and docs/REPRODUCING.md.
 
 on:
   workflow_dispatch:
@@ -20,9 +24,9 @@ on:
         required: true
         default: "configs/table1_ablation.toml"
       jobs:
-        description: "parallel jobs (each runs 4 shards); 1-64"
-        required: true
-        default: "16"
+        description: "parallel jobs, each running 4 shards (empty: one per 20 runs, at most 256)"
+        required: false
+        default: ""
       only:
         description: "optional filter, e.g. dataset=cora,seed=0|1|2"
         required: false
@@ -35,12 +39,14 @@ on:
         description: "push results to branch results/<sweep name>"
         type: boolean
         default: true
+  push:
+    branches: ["reproduce/**"]
 
 permissions:
   contents: write
 
 concurrency:
-  group: reproduce-${{ inputs.config }}
+  group: reproduce-${{ github.ref_name }}-${{ inputs.config }}
   cancel-in-progress: false
 
 jobs:
@@ -49,21 +55,40 @@ jobs:
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       name: ${{ steps.plan.outputs.name }}
+      config: ${{ steps.plan.outputs.config }}
       shards: ${{ steps.plan.outputs.shards }}
+      only: ${{ steps.plan.outputs.only }}
+      set: ${{ steps.plan.outputs.set }}
+      publish: ${{ steps.plan.outputs.publish }}
     steps:
       - uses: actions/checkout@v4
       - id: plan
         env:
-          CONFIG: ${{ inputs.config }}
-          JOBS: ${{ inputs.jobs }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          IN_CONFIG: ${{ inputs.config }}
+          IN_JOBS: ${{ inputs.jobs }}
+          IN_ONLY: ${{ inputs.only }}
+          IN_SET: ${{ inputs.set }}
+          IN_PUBLISH: ${{ inputs.publish }}
         run: |
           python3 - <<'EOF'
-          import json, os, tomllib
-          jobs = max(1, min(64, int(os.environ["JOBS"])))
-          name = tomllib.load(open(os.environ["CONFIG"], "rb"))["name"]
+          import json, math, os, tomllib
+          push = os.environ["EVENT"] == "push"
+          config = (f"configs/{os.environ['REF_NAME'].removeprefix('reproduce/')}.toml" if push
+                    else os.environ["IN_CONFIG"])
+          spec = tomllib.load(open(config, "rb"))
+          n_runs = math.prod(len(v) for v in spec.get("grid", {}).values()) * max(1, len(spec.get("variant", [])))
+          jobs = os.environ.get("IN_JOBS", "") if not push else ""
+          jobs = max(1, min(256, int(jobs) if jobs.strip() else math.ceil(n_runs / 20)))
+          publish = "true" if push else os.environ.get("IN_PUBLISH", "true")
+          out = {"matrix": json.dumps({"job": list(range(jobs))}), "name": spec["name"], "config": config,
+                 "shards": str(4 * jobs), "only": "" if push else os.environ.get("IN_ONLY", ""),
+                 "set": "" if push else os.environ.get("IN_SET", ""), "publish": publish}
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-              fh.write(f"matrix={json.dumps({'job': list(range(jobs))})}\n")
-              fh.write(f"name={name}\nshards={4 * jobs}\n")
+              for k, v in out.items():
+                  fh.write(f"{k}={v}\n")
+          print(f"{config}: {n_runs} runs, {jobs} jobs x 4 shards")
           EOF
 
   sweep:
@@ -73,6 +98,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -92,9 +121,9 @@ jobs:
           restore-keys: datasets-v1-
       - name: Run 4 shards
         env:
-          CONFIG: ${{ inputs.config }}
-          ONLY: ${{ inputs.only }}
-          SET: ${{ inputs.set }}
+          CONFIG: ${{ needs.plan.outputs.config }}
+          ONLY: ${{ needs.plan.outputs.only }}
+          SET: ${{ needs.plan.outputs.set }}
           SHARDS: ${{ needs.plan.outputs.shards }}
           JOB: ${{ matrix.job }}
         run: |
@@ -103,7 +132,9 @@ jobs:
           for kv in $SET; do args+=(--set "$kv"); done
           status=0
           for j in 0 1 2 3; do
-            python -m nhdp_gnn.sweep "$CONFIG" --shard $((4 * JOB + j))/"$SHARDS" "${args[@]}" > "shard-$j.log" 2>&1 &
+            # stop before the job limit so that finished runs are still uploaded
+            timeout --signal=INT 330m python -m nhdp_gnn.sweep "$CONFIG" --shard $((4 * JOB + j))/"$SHARDS" \
+              "${args[@]}" > "shard-$j.log" 2>&1 &
           done
           for j in 0 1 2 3; do wait -n || status=1; done
           tail -n 3 shard-*.log
@@ -135,14 +166,15 @@ jobs:
           merge-multiple: true
       - name: Tables
         env:
-          CONFIG: ${{ inputs.config }}
-          ONLY: ${{ inputs.only }}
-          SET: ${{ inputs.set }}
+          CONFIG: ${{ needs.plan.outputs.config }}
+          ONLY: ${{ needs.plan.outputs.only }}
+          SET: ${{ needs.plan.outputs.set }}
           NAME: ${{ needs.plan.outputs.name }}
         run: |
           args=()
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
           for kv in $SET; do args+=(--set "$kv"); done
+          mkdir -p collected/runs
           python scripts/make_tables.py "$CONFIG" --runs collected/runs --out "results/$NAME" "${args[@]}"
           cat "results/$NAME/README.md" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
@@ -151,7 +183,7 @@ jobs:
           path: results/
           retention-days: 90
       - name: Publish to results branch
-        if: inputs.publish
+        if: needs.plan.outputs.publish == 'true'
         env:
           NAME: ${{ needs.plan.outputs.name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

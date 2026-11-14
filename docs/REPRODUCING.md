@@ -41,11 +41,13 @@ computed from completed runs only; missing runs are listed, never imputed.
 ## Running sweeps on GitHub Actions
 
 `.github/workflows/reproduce.yml` runs one sweep on GitHub-hosted CPU runners
-(4 vCPUs each; every job runs four shards with one torch thread each):
+(4 vCPUs each; every job runs four shards with one thread each; by default one
+job per 20 runs, at most 256). Start it from the Actions tab ("Run workflow"), or:
 
 ```bash
-gh workflow run reproduce.yml -f config=configs/table1_ablation.toml -f jobs=16
+gh workflow run reproduce.yml -f config=configs/table1_ablation.toml
 gh workflow run reproduce.yml -f config=configs/table2_full.toml -f jobs=64 -f only="seed=0|1|2"
+git push origin HEAD:reproduce/table2_full      # a push to reproduce/<sweep> runs configs/<sweep>.toml
 ```
 
 The aggregate job writes `results/<name>/` with `scripts/make_tables.py`, shows the

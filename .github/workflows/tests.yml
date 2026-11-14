@@ -2,6 +2,7 @@ name: tests
 
 on:
   push:
+    branches-ignore: ["reproduce/**", "results/**"]
   pull_request:
 
 jobs:
