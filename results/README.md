@@ -9,7 +9,7 @@ Each directory holds one sweep from `configs/`, run on GitHub-hosted CPU runners
 | `README.md` | the article's table layout: mean ± 95% t-interval over seeds with n per cell, paired two-sided Wilcoxon p-values against the reference row, failed runs per cell, and the expected, completed, failed and missing runs |
 | `<value>.csv` | one row per cell with the mean, the CI half-width, n, the per-seed values and the failed runs by reason |
 | `runs.jsonl.gz` | every run's result JSON: configuration, validation and test metrics, best epoch, timings, peak memory, stage A/B diagnostics, embedding diagnostics, code commit |
-| `failures.jsonl.gz` | every failure record: configuration, reason (memory, time or error) and the measurements behind it |
+| `failures.jsonl.gz` | every failure record: configuration, reason (memory, time, diverged or error) and the measurements behind it |
 | `summary.json` | counts, the sweep's `[base]` and `[grid]`, and the code commit(s) of the runs |
 
 **Protocol.** The sweeps use the hyper-parameters in `configs/` (hidden 64, learning
@@ -22,7 +22,8 @@ Tables 2-5 and Fig. 11 on, every run executes in a process of its own, four at a
 runner, within a memory budget of 13 GB of the runner's 16 GB (`nhdp_gnn.sweep --workers`).
 A run that does not fit next to the others is repeated on its own. A run that needs more than
 13 GB on its own, or whose training provably needs more than 150 minutes, is reported as
-failed with that reason instead of a value; each table lists its failed runs with the
+failed with that reason instead of a value, and so is a run whose selected model gives
+non-finite outputs (reason `diverged`); each table lists its failed runs with the
 measurements behind the decision. While a sweep runs, every finished job adds its runs to the
 branch `results/<sweep>`, whose tables are therefore current but incomplete.
 
