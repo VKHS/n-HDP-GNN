@@ -97,7 +97,8 @@ if another job pushed first), so the branch shows the tables of all finished job
 the sweep runs. The aggregate job repeats the merge with every artifact at the end, shows
 the tables in the run summary and uploads them as an artifact. Running the workflow again
 for the same sweep continues it: runs recorded on `results/<name>` (completed, or failed
-for memory or time) are not repeated. Start it with `fresh` (or delete the branch) to
+for memory, time or divergence) are not repeated. A run started with a narrower `only` (for
+example to repeat a few runs) still publishes the tables of the whole sweep. Start it with `fresh` (or delete the branch) to
 repeat everything, e.g. after a change to the code. Runs that a job's deadline stopped
 are listed as missing and are run by the next invocation. OGB-scale and multi-node runs
 need a cluster.

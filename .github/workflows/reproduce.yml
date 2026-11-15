@@ -71,6 +71,7 @@ jobs:
       name: ${{ steps.plan.outputs.name }}
       config: ${{ steps.plan.outputs.config }}
       only: ${{ steps.plan.outputs.only }}
+      publish_only: ${{ steps.plan.outputs.publish_only }}
       set: ${{ steps.plan.outputs.set }}
       memory_gb: ${{ steps.plan.outputs.memory_gb }}
       run_minutes: ${{ steps.plan.outputs.run_minutes }}
@@ -108,7 +109,8 @@ jobs:
           jobs = os.environ.get("IN_JOBS", "") if not push else ""
           jobs = max(1, min(256, int(jobs) if jobs.strip() else math.ceil(n_runs / per_job)))
           out = {"matrix": json.dumps({"job": list(range(jobs))}), "jobs": str(jobs), "name": spec["name"],
-                 "config": config, "only": only, "set": "" if push else os.environ.get("IN_SET", ""),
+                 "config": config, "only": only, "publish_only": actions.get("only", ""),
+                 "set": "" if push else os.environ.get("IN_SET", ""),
                  "memory_gb": str(actions.get("memory_gb", 13)), "run_minutes": str(actions.get("run_minutes", 150)),
                  "publish": "true" if push else os.environ.get("IN_PUBLISH", "true"),
                  "fresh": "false" if push else os.environ.get("IN_FRESH", "false") or "false"}
@@ -131,6 +133,7 @@ jobs:
       MKL_NUM_THREADS: "1"
       CONFIG: ${{ needs.plan.outputs.config }}
       ONLY: ${{ needs.plan.outputs.only }}
+      PUBLISH_ONLY: ${{ needs.plan.outputs.publish_only }}
       SET: ${{ needs.plan.outputs.set }}
       SHARD: ${{ matrix.job }}/${{ needs.plan.outputs.jobs }}
     steps:
@@ -201,7 +204,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           args=(--records "runs/$NAME" --message "Results of $NAME: job ${{ matrix.job }} of $RUN_URL ($GITHUB_SHA)")
-          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          # the branch holds the whole sweep, also when this run was started for a part of it
+          [ -n "$PUBLISH_ONLY" ] && args+=(--only "$PUBLISH_ONLY")
           for kv in $SET; do args+=(--set "$kv"); done
           python scripts/publish_results.py "$CONFIG" "${args[@]}"
 
@@ -237,6 +241,7 @@ jobs:
         env:
           CONFIG: ${{ needs.plan.outputs.config }}
           ONLY: ${{ needs.plan.outputs.only }}
+          PUBLISH_ONLY: ${{ needs.plan.outputs.publish_only }}
           SET: ${{ needs.plan.outputs.set }}
           NAME: ${{ needs.plan.outputs.name }}
           PUBLISH: ${{ needs.plan.outputs.publish }}
@@ -245,14 +250,15 @@ jobs:
           mkdir -p collected
           rm -rf "results/$NAME"                              # the copy in the checkout, if any
           args=()
-          [ -n "$ONLY" ] && args+=(--only "$ONLY")
           for kv in $SET; do args+=(--set "$kv"); done
           if [ "$PUBLISH" = "true" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            [ -n "$PUBLISH_ONLY" ] && args+=(--only "$PUBLISH_ONLY")
             python scripts/publish_results.py "$CONFIG" --records collected --out "results/$NAME" \
               --message "Results of $NAME: all jobs of $RUN_URL ($GITHUB_SHA)" "${args[@]}"
           else
+            [ -n "$ONLY" ] && args+=(--only "$ONLY")
             [ -d previous ] && args+=(--runs previous)        # records of this run take precedence
             python scripts/make_tables.py "$CONFIG" --runs collected --out "results/$NAME" "${args[@]}"
           fi
