@@ -103,6 +103,17 @@ repeat everything, e.g. after a change to the code. Runs that a job's deadline s
 are listed as missing and are run by the next invocation. OGB-scale and multi-node runs
 need a cluster.
 
+## Checking that a run repeats
+
+`python scripts/check_reproducibility.py --dataset cora --seeds 0 1 --repeats 2` trains one
+configuration repeatedly, each time in a process of its own with a cache directory of its own,
+with the default kernel selection and with the instruction set pinned
+(`ATEN_CPU_CAPABILITY=avx2`, `MKL_CBWR=AVX2`, `OPENBLAS_CORETYPE=HASWELL`,
+`ONEDNN_MAX_CPU_ISA=AVX2`). It prints one `RESULT` line per run (metrics, best epoch, a
+fingerprint of the n-HDP objective trace, the CPU model) and says which repeats and which variants
+agree. The `determinism` workflow (Actions tab, "Run workflow") runs it on eight GitHub runners, so
+that the lines of runners with different CPUs can be compared.
+
 ## Measured artifacts without training
 
 `python -m nhdp_gnn.artifacts` (numpy only) measures stages A and B, the partition
