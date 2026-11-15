@@ -1,6 +1,6 @@
 # table4_scarce
 
-Sweep `configs/table4_scarce.toml`: 2400 runs expected, 16 completed, 0 failed, 2384 missing.
+Sweep `configs/table4_scarce.toml`: 2400 runs expected, 32 completed, 0 failed, 2368 missing.
 
 Values are mean ± 95% t-interval over seeds; n is the number of completed seeds in the cell.
 
@@ -12,16 +12,16 @@ Code commit(s) of the runs: 0f7045972e60a86d7966841bc3e5c4bfe0caa016
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 71.39 (n=1) |  |
-| gat |  | 64.91 (n=1) |
-| nhdp | 62.35 (n=1) |  |
-| pairnorm |  | 44.88 (n=1) |
+| arma | 69.88 ± 19.14 (n=2) |  |
+| gat |  | 62.73 ± 27.75 (n=2) |
+| nhdp | 64.38 ± 25.83 (n=2) |  |
+| pairnorm |  | 46.54 ± 21.05 (n=2) |
 
 Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma |  |  |
+| arma | 0.5 |  |
 | gat |  |  |
 | pairnorm |  |  |
 
@@ -29,16 +29,16 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 82.04 (n=1) |  |
-| gat |  | 77.04 (n=1) |
-| nhdp | 70.00 (n=1) |  |
-| pairnorm |  | 57.04 (n=1) |
+| arma | 80.93 ± 14.12 (n=2) |  |
+| gat |  | 78.24 ± 15.29 (n=2) |
+| nhdp | 67.78 ± 28.24 (n=2) |  |
+| pairnorm |  | 59.81 ± 35.30 (n=2) |
 
 Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma |  |  |
+| arma | 0.5 |  |
 | gat |  |  |
 | pairnorm |  |  |
 
@@ -46,16 +46,16 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 92.61 (n=1) |  |
-| gat |  | 86.79 (n=1) |
-| nhdp | 82.01 (n=1) |  |
-| pairnorm |  | 89.14 (n=1) |
+| arma | 92.61 ± 0.00 (n=2) |  |
+| gat |  | 87.12 ± 4.16 (n=2) |
+| nhdp | 79.04 ± 37.81 (n=2) |  |
+| pairnorm |  | 89.67 ± 6.65 (n=2) |
 
 Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma |  |  |
+| arma | 0.5 |  |
 | gat |  |  |
 | pairnorm |  |  |
 
@@ -63,16 +63,16 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 85.09 (n=1) |  |
-| gat |  | 82.60 (n=1) |
-| nhdp | 82.15 (n=1) |  |
-| pairnorm |  | 82.75 (n=1) |
+| arma | 85.24 ± 1.93 (n=2) |  |
+| gat |  | 82.29 ± 4.03 (n=2) |
+| nhdp | 82.27 ± 1.61 (n=2) |  |
+| pairnorm |  | 82.70 ± 0.64 (n=2) |
 
 Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma |  |  |
+| arma | 0.5 |  |
 | gat |  |  |
 | pairnorm |  |  |
 
@@ -82,37 +82,37 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.40 (n=1) |  |
-| gat |  | 0.60 (n=1) |
-| nhdp | 0.73 (n=1) |  |
-| pairnorm |  | -0.04 (n=1) |
+| arma | 0.41 ± 0.16 (n=2) |  |
+| gat |  | 0.68 ± 1.10 (n=2) |
+| nhdp | 0.72 ± 0.10 (n=2) |  |
+| pairnorm |  | -0.01 ± 0.45 (n=2) |
 
 **cora** -- embedding.centroid_gap
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.58 (n=1) |  |
-| gat |  | 0.93 (n=1) |
-| nhdp | 0.78 (n=1) |  |
-| pairnorm |  | 0.26 (n=1) |
+| arma | 0.57 ± 0.03 (n=2) |  |
+| gat |  | 0.92 ± 0.17 (n=2) |
+| nhdp | 0.75 ± 0.31 (n=2) |  |
+| pairnorm |  | 0.28 ± 0.33 (n=2) |
 
 **photo** -- embedding.centroid_gap
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.88 (n=1) |  |
-| gat |  | 0.73 (n=1) |
-| nhdp | 0.49 (n=1) |  |
-| pairnorm |  | 0.61 (n=1) |
+| arma | 0.87 ± 0.13 (n=2) |  |
+| gat |  | 0.78 ± 0.58 (n=2) |
+| nhdp | 0.49 ± 0.03 (n=2) |  |
+| pairnorm |  | 0.62 ± 0.12 (n=2) |
 
 **pubmed** -- embedding.centroid_gap
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 1.21 (n=1) |  |
-| gat |  | 1.18 (n=1) |
-| nhdp | 1.14 (n=1) |  |
-| pairnorm |  | 1.19 (n=1) |
+| arma | 1.21 ± 0.05 (n=2) |  |
+| gat |  | 1.17 ± 0.15 (n=2) |
+| nhdp | 1.14 ± 0.00 (n=2) |  |
+| pairnorm |  | 1.19 ± 0.02 (n=2) |
 
 ## embedding.madgap
 
@@ -120,37 +120,37 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.62 (n=1) |  |
-| gat |  | 0.87 (n=1) |
-| nhdp | 0.64 (n=1) |  |
-| pairnorm |  | 0.55 (n=1) |
+| arma | 0.63 ± 0.21 (n=2) |  |
+| gat |  | 0.91 ± 0.53 (n=2) |
+| nhdp | 0.67 ± 0.38 (n=2) |  |
+| pairnorm |  | 0.54 ± 0.15 (n=2) |
 
 **cora** -- embedding.madgap
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.47 (n=1) |  |
-| gat |  | 0.67 (n=1) |
-| nhdp | 0.48 (n=1) |  |
-| pairnorm |  | 0.46 (n=1) |
+| arma | 0.46 ± 0.02 (n=2) |  |
+| gat |  | 0.75 ± 1.06 (n=2) |
+| nhdp | 0.48 ± 0.02 (n=2) |  |
+| pairnorm |  | 0.49 ± 0.44 (n=2) |
 
 **photo** -- embedding.madgap
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.25 (n=1) |  |
-| gat |  | 0.53 (n=1) |
-| nhdp | 0.13 (n=1) |  |
-| pairnorm |  | 0.27 (n=1) |
+| arma | 0.30 ± 0.64 (n=2) |  |
+| gat |  | 0.54 ± 0.17 (n=2) |
+| nhdp | 0.19 ± 0.78 (n=2) |  |
+| pairnorm |  | 0.26 ± 0.14 (n=2) |
 
 **pubmed** -- embedding.madgap
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.85 (n=1) |  |
-| gat |  | 0.98 (n=1) |
-| nhdp | 0.66 (n=1) |  |
-| pairnorm |  | 0.87 (n=1) |
+| arma | 0.85 ± 0.06 (n=2) |  |
+| gat |  | 0.97 ± 0.10 (n=2) |
+| nhdp | 0.68 ± 0.21 (n=2) |  |
+| pairnorm |  | 0.88 ± 0.15 (n=2) |
 
 ## timings.epoch_s_mean (seconds per training epoch (one thread))
 
@@ -158,37 +158,37 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.55 (n=1) |  |
-| gat |  | 0.38 (n=1) |
-| nhdp | 0.31 (n=1) |  |
-| pairnorm |  | 0.35 (n=1) |
+| arma | 0.58 ± 0.49 (n=2) |  |
+| gat |  | 0.40 ± 0.29 (n=2) |
+| nhdp | 0.34 ± 0.33 (n=2) |  |
+| pairnorm |  | 0.37 ± 0.20 (n=2) |
 
 **cora** -- timings.epoch_s_mean
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.17 (n=1) |  |
-| gat |  | 0.19 (n=1) |
-| nhdp | 0.11 (n=1) |  |
-| pairnorm |  | 0.15 (n=1) |
+| arma | 0.18 ± 0.09 (n=2) |  |
+| gat |  | 0.19 ± 0.03 (n=2) |
+| nhdp | 0.11 ± 0.06 (n=2) |  |
+| pairnorm |  | 0.15 ± 0.02 (n=2) |
 
 **photo** -- timings.epoch_s_mean
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.46 (n=1) |  |
-| gat |  | 1.94 (n=1) |
-| nhdp | 0.68 (n=1) |  |
-| pairnorm |  | 1.38 (n=1) |
+| arma | 0.51 ± 0.57 (n=2) |  |
+| gat |  | 2.08 ± 1.79 (n=2) |
+| nhdp | 0.71 ± 0.44 (n=2) |  |
+| pairnorm |  | 1.45 ± 0.85 (n=2) |
 
 **pubmed** -- timings.epoch_s_mean
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 0.57 (n=1) |  |
-| gat |  | 1.25 (n=1) |
-| nhdp | 0.53 (n=1) |  |
-| pairnorm |  | 1.15 (n=1) |
+| arma | 0.61 ± 0.52 (n=2) |  |
+| gat |  | 1.25 ± 0.01 (n=2) |
+| nhdp | 0.56 ± 0.40 (n=2) |  |
+| pairnorm |  | 1.21 ± 0.76 (n=2) |
 
 ## peak_rss_mb (peak resident memory of the run's process in MB)
 
@@ -196,37 +196,37 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 803.94 (n=1) |  |
-| gat |  | 863.53 (n=1) |
-| nhdp | 822.32 (n=1) |  |
-| pairnorm |  | 810.68 (n=1) |
+| arma | 803.82 ± 1.44 (n=2) |  |
+| gat |  | 863.57 ± 0.55 (n=2) |
+| nhdp | 822.41 ± 1.24 (n=2) |  |
+| pairnorm |  | 810.49 ± 2.43 (n=2) |
 
 **cora** -- peak_rss_mb
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 673.07 (n=1) |  |
-| gat |  | 732.26 (n=1) |
-| nhdp | 669.82 (n=1) |  |
-| pairnorm |  | 667.15 (n=1) |
+| arma | 673.22 ± 1.81 (n=2) |  |
+| gat |  | 723.90 ± 106.24 (n=2) |
+| nhdp | 668.35 ± 18.76 (n=2) |  |
+| pairnorm |  | 670.50 ± 42.59 (n=2) |
 
 **photo** -- peak_rss_mb
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 842.99 (n=1) |  |
-| gat |  | 1863.98 (n=1) |
-| nhdp | 1110.32 (n=1) |  |
-| pairnorm |  | 957.64 (n=1) |
+| arma | 832.17 ± 137.46 (n=2) |  |
+| gat |  | 1864.22 ± 3.03 (n=2) |
+| nhdp | 1107.41 ± 36.93 (n=2) |  |
+| pairnorm |  | 956.53 ± 14.02 (n=2) |
 
 **pubmed** -- peak_rss_mb
 
 | model | 2 | 10 |
 |---|---|---|
-| arma | 1011.54 (n=1) |  |
-| gat |  | 1613.28 (n=1) |
-| nhdp | 1152.38 (n=1) |  |
-| pairnorm |  | 1205.39 (n=1) |
+| arma | 1005.82 ± 72.71 (n=2) |  |
+| gat |  | 1641.99 ± 364.83 (n=2) |
+| nhdp | 1133.18 ± 244.02 (n=2) |  |
+| pairnorm |  | 1201.79 ± 45.74 (n=2) |
 
 ## Missing runs
 
@@ -239,7 +239,6 @@ Not attempted, or stopped by the job's deadline.
 | bc34e5a80905 | cora | nhdp |  | 2 | 2 |
 | 9951edbfdfb3 | cora | nhdp |  | 2 | 3 |
 | 83d31285a5a6 | cora | nhdp |  | 2 | 5 |
-| 988cca5840d2 | cora | nhdp |  | 2 | 6 |
 | 62d3bd26eb91 | cora | nhdp |  | 2 | 7 |
 | 0026617b93ae | cora | nhdp |  | 2 | 8 |
 | 1dd5b8860aa1 | cora | nhdp |  | 2 | 9 |
@@ -388,7 +387,6 @@ Not attempted, or stopped by the job's deadline.
 | 801ac880023f | cora | gat |  | 10 | 2 |
 | 34738e07bbf9 | cora | gat |  | 10 | 3 |
 | 7e47866cdbfa | cora | gat |  | 10 | 5 |
-| 1325a56d8864 | cora | gat |  | 10 | 6 |
 | 4ca0cb0187c0 | cora | gat |  | 10 | 7 |
 | bdfc7401cc7f | cora | gat |  | 10 | 8 |
 | ac3ecd62cfa9 | cora | gat |  | 10 | 9 |
@@ -537,7 +535,6 @@ Not attempted, or stopped by the job's deadline.
 | 5555ec9c9d41 | cora | arma |  | 2 | 2 |
 | a853814b42c2 | cora | arma |  | 2 | 3 |
 | 683144b25c1f | cora | arma |  | 2 | 5 |
-| 4a72141dbd54 | cora | arma |  | 2 | 6 |
 | 3525c6f695ba | cora | arma |  | 2 | 7 |
 | cb8effbe8e93 | cora | arma |  | 2 | 8 |
 | 6940793a65d4 | cora | arma |  | 2 | 9 |
@@ -686,7 +683,6 @@ Not attempted, or stopped by the job's deadline.
 | 26a33f0dae02 | cora | pairnorm |  | 10 | 2 |
 | b67464f09821 | cora | pairnorm |  | 10 | 3 |
 | cf2a54de34cf | cora | pairnorm |  | 10 | 5 |
-| a09d3b06d4e7 | cora | pairnorm |  | 10 | 6 |
 | 7d851a6594d5 | cora | pairnorm |  | 10 | 7 |
 | 478be7bee011 | cora | pairnorm |  | 10 | 8 |
 | 1cc30f217db5 | cora | pairnorm |  | 10 | 9 |
@@ -835,7 +831,6 @@ Not attempted, or stopped by the job's deadline.
 | 0a2f52eeda3d | citeseer | nhdp |  | 2 | 2 |
 | 6f63de07d605 | citeseer | nhdp |  | 2 | 3 |
 | 57be86251318 | citeseer | nhdp |  | 2 | 5 |
-| ae8e966b34ab | citeseer | nhdp |  | 2 | 6 |
 | d2fa84e2b6fc | citeseer | nhdp |  | 2 | 7 |
 | c282cb6a11e5 | citeseer | nhdp |  | 2 | 8 |
 | b9289add1c23 | citeseer | nhdp |  | 2 | 9 |
@@ -984,7 +979,6 @@ Not attempted, or stopped by the job's deadline.
 | c62766a8f6e1 | citeseer | gat |  | 10 | 2 |
 | f5d11572fba9 | citeseer | gat |  | 10 | 3 |
 | b578e8a3a089 | citeseer | gat |  | 10 | 5 |
-| fda8834b52fb | citeseer | gat |  | 10 | 6 |
 | 94842d3dc061 | citeseer | gat |  | 10 | 7 |
 | 64be6d40ff7f | citeseer | gat |  | 10 | 8 |
 | c4197ffb4ab7 | citeseer | gat |  | 10 | 9 |
@@ -1133,7 +1127,6 @@ Not attempted, or stopped by the job's deadline.
 | 044e5fd08c1f | citeseer | arma |  | 2 | 2 |
 | 2104f1c14ab3 | citeseer | arma |  | 2 | 3 |
 | 6983c26caebe | citeseer | arma |  | 2 | 5 |
-| f33261ec0dfd | citeseer | arma |  | 2 | 6 |
 | bf8ed4975839 | citeseer | arma |  | 2 | 7 |
 | e7f1e9e07eeb | citeseer | arma |  | 2 | 8 |
 | d8992ebfb04a | citeseer | arma |  | 2 | 9 |
@@ -1282,7 +1275,6 @@ Not attempted, or stopped by the job's deadline.
 | eb111334daf0 | citeseer | pairnorm |  | 10 | 2 |
 | e6118064111d | citeseer | pairnorm |  | 10 | 3 |
 | 7398a10d6aa9 | citeseer | pairnorm |  | 10 | 5 |
-| bebb1e7c157a | citeseer | pairnorm |  | 10 | 6 |
 | f3192f6d9b19 | citeseer | pairnorm |  | 10 | 7 |
 | 29eae6272575 | citeseer | pairnorm |  | 10 | 8 |
 | f6b2ff1ebdd8 | citeseer | pairnorm |  | 10 | 9 |
@@ -1431,7 +1423,6 @@ Not attempted, or stopped by the job's deadline.
 | 1c9de8b2a1eb | pubmed | nhdp |  | 2 | 2 |
 | e187016e4fe9 | pubmed | nhdp |  | 2 | 3 |
 | 9a52be8b02da | pubmed | nhdp |  | 2 | 5 |
-| 637407cb8964 | pubmed | nhdp |  | 2 | 6 |
 | 24b4ee68c52d | pubmed | nhdp |  | 2 | 7 |
 | d3d368653876 | pubmed | nhdp |  | 2 | 8 |
 | 2d6e5898779f | pubmed | nhdp |  | 2 | 9 |
@@ -1580,7 +1571,6 @@ Not attempted, or stopped by the job's deadline.
 | fc65c498c999 | pubmed | gat |  | 10 | 2 |
 | 655138029f19 | pubmed | gat |  | 10 | 3 |
 | 5177e52c47b5 | pubmed | gat |  | 10 | 5 |
-| 622a9a503b7f | pubmed | gat |  | 10 | 6 |
 | 350676b425ab | pubmed | gat |  | 10 | 7 |
 | a8a72904524a | pubmed | gat |  | 10 | 8 |
 | 2c65d59521fd | pubmed | gat |  | 10 | 9 |
@@ -1729,7 +1719,6 @@ Not attempted, or stopped by the job's deadline.
 | 55e24dd9c110 | pubmed | arma |  | 2 | 2 |
 | 4f3045cc15e5 | pubmed | arma |  | 2 | 3 |
 | 5315fcacfdd1 | pubmed | arma |  | 2 | 5 |
-| 7b02eca05aef | pubmed | arma |  | 2 | 6 |
 | 8b956fba7488 | pubmed | arma |  | 2 | 7 |
 | 33380a751ccf | pubmed | arma |  | 2 | 8 |
 | 684aae5cbabe | pubmed | arma |  | 2 | 9 |
@@ -1878,7 +1867,6 @@ Not attempted, or stopped by the job's deadline.
 | c6dcaa32ea56 | pubmed | pairnorm |  | 10 | 2 |
 | 20cc281d19e1 | pubmed | pairnorm |  | 10 | 3 |
 | b59419b8f103 | pubmed | pairnorm |  | 10 | 5 |
-| 6a5bf02b4ef1 | pubmed | pairnorm |  | 10 | 6 |
 | 5b3933d02c80 | pubmed | pairnorm |  | 10 | 7 |
 | c522905b6f40 | pubmed | pairnorm |  | 10 | 8 |
 | e8611bb1199b | pubmed | pairnorm |  | 10 | 9 |
@@ -2027,7 +2015,6 @@ Not attempted, or stopped by the job's deadline.
 | 31e2fd8d180e | photo | nhdp |  | 2 | 2 |
 | f327e682c307 | photo | nhdp |  | 2 | 3 |
 | 39cbc06ced20 | photo | nhdp |  | 2 | 5 |
-| 893f9534e714 | photo | nhdp |  | 2 | 6 |
 | 4a0e1903e24d | photo | nhdp |  | 2 | 7 |
 | 015e8d48a373 | photo | nhdp |  | 2 | 8 |
 | c9280077e2ed | photo | nhdp |  | 2 | 9 |
@@ -2176,7 +2163,6 @@ Not attempted, or stopped by the job's deadline.
 | f9f5e8b790ac | photo | gat |  | 10 | 2 |
 | 374299e79659 | photo | gat |  | 10 | 3 |
 | ca0125149d7c | photo | gat |  | 10 | 5 |
-| b720393826e3 | photo | gat |  | 10 | 6 |
 | 60c7b70cd5ce | photo | gat |  | 10 | 7 |
 | cf22dab3525c | photo | gat |  | 10 | 8 |
 | 641467f89b34 | photo | gat |  | 10 | 9 |
@@ -2325,7 +2311,6 @@ Not attempted, or stopped by the job's deadline.
 | b4f938269852 | photo | arma |  | 2 | 2 |
 | fa3798294c1f | photo | arma |  | 2 | 3 |
 | 87d3d1317bb0 | photo | arma |  | 2 | 5 |
-| 6f1d4dae2d48 | photo | arma |  | 2 | 6 |
 | e493bacb622a | photo | arma |  | 2 | 7 |
 | 17899b6057c4 | photo | arma |  | 2 | 8 |
 | 72eea9cd209c | photo | arma |  | 2 | 9 |
@@ -2474,7 +2459,6 @@ Not attempted, or stopped by the job's deadline.
 | 751fa89ba843 | photo | pairnorm |  | 10 | 2 |
 | 9de8db89363b | photo | pairnorm |  | 10 | 3 |
 | ccfd4acfb45d | photo | pairnorm |  | 10 | 5 |
-| e623ab889abd | photo | pairnorm |  | 10 | 6 |
 | 2768c75e5ae8 | photo | pairnorm |  | 10 | 7 |
 | 8a79de8bd37b | photo | pairnorm |  | 10 | 8 |
 | b9b22632bd8a | photo | pairnorm |  | 10 | 9 |
