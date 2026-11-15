@@ -1,6 +1,6 @@
 # fig11_heads
 
-Sweep `configs/fig11_heads.toml --only dataset=cora|citeseer|pubmed|photo|ogbn-arxiv`: 250 runs expected, 210 completed, 34 failed (27 memory, 7 time), 6 missing.
+Sweep `configs/fig11_heads.toml --only dataset=cora|citeseer|pubmed|photo|ogbn-arxiv`: 250 runs expected, 210 completed, 35 failed (27 memory, 8 time), 5 missing.
 
 Selection: ogbn-products and ogbn-proteins are not part of the runs on GitHub-hosted runners (4 vCPUs and 16 GB of memory per job); run them on a cluster with scripts/launch_cluster.sh.
 
@@ -8,7 +8,7 @@ Values are mean ± 95% t-interval over seeds; n is the number of completed seeds
 
 Failed runs are counted per cell by reason: *memory*: the run needed more memory than the budget while running alone; *time*: training provably needed more than the time limit (or the run exceeded the wall-clock limit).
 
-Code commit(s) of the runs: 20d9d0fac98f9a83bb60e54bf36ddf1c98869b65
+Code commit(s) of the runs: 0f7045972e60a86d7966841bc3e5c4bfe0caa016, 20d9d0fac98f9a83bb60e54bf36ddf1c98869b65
 
 ## test (accuracy in %)
 
@@ -24,7 +24,7 @@ Code commit(s) of the runs: 20d9d0fac98f9a83bb60e54bf36ddf1c98869b65
 | heads-18 | 67.74 ± 6.56 (n=5) | 82.81 ± 1.53 (n=5) | failed: 4 memory | 62.88 ± 31.03 (n=5) | 87.21 ± 0.95 (n=5) |
 | heads-2 | 69.97 ± 3.94 (n=5) | 80.89 ± 2.11 (n=5) | 52.53 ± 5.09 (n=5) | 89.01 ± 2.47 (n=5) | 87.26 ± 1.04 (n=5) |
 | heads-4 | 70.33 ± 2.88 (n=5) | 82.04 ± 2.66 (n=5) | failed: 4 time | 88.08 ± 5.06 (n=5) | 87.59 ± 0.89 (n=5) |
-| heads-6 | 71.45 ± 2.17 (n=5) | 82.00 ± 2.71 (n=5) | failed: 3 time | 86.17 ± 8.58 (n=5) | 87.51 ± 0.47 (n=5) |
+| heads-6 | 71.45 ± 2.17 (n=5) | 82.00 ± 2.71 (n=5) | failed: 4 time | 86.17 ± 8.58 (n=5) | 87.51 ± 0.47 (n=5) |
 | heads-8 | 71.05 ± 2.41 (n=5) | 82.37 ± 1.12 (n=5) | failed: 5 memory | 81.87 ± 12.36 (n=5) | 87.77 ± 0.67 (n=5) |
 
 ## Failed runs
@@ -60,6 +60,7 @@ Code commit(s) of the runs: 20d9d0fac98f9a83bb60e54bf36ddf1c98869b65
 | a63b0bf6e8a2 | ogbn-arxiv | nhdp | heads-6 | 10 | 0 | time | stopped after 123 epochs (86.0 min): early stopping needs at least 100 more epochs at >= 39.1 s each, i.e. at least 151 min of training, more than the 150-minut... |
 | 986d13c24b3e | ogbn-arxiv | nhdp | heads-6 | 10 | 1 | time | stopped after 117 epochs (85.7 min): early stopping needs at least 100 more epochs at >= 38.7 s each, i.e. at least 150 min of training, more than the 150-minut... |
 | c93bcdaf147d | ogbn-arxiv | nhdp | heads-6 | 10 | 2 | time | stopped after 119 epochs (85.3 min): early stopping needs at least 99 more epochs at >= 39.2 s each, i.e. at least 150 min of training, more than the 150-minute... |
+| b3bc919eff5b | ogbn-arxiv | nhdp | heads-6 | 10 | 4 | time | stopped after 81 epochs (71.7 min): early stopping needs at least 100 more epochs at >= 52.1 s each, i.e. at least 159 min of training, more than the 150-minute... |
 | e2924ad3d002 | ogbn-arxiv | nhdp | heads-8 | 10 | 0 | memory | exceeded the 13 GB memory budget while running alone (13692 MB) |
 | 49ba2fe8f403 | ogbn-arxiv | nhdp | heads-8 | 10 | 1 | memory | exceeded the 13 GB memory budget while running alone (13618 MB) |
 | 9224f0f7e26e | ogbn-arxiv | nhdp | heads-8 | 10 | 2 | memory | exceeded the 13 GB memory budget while running alone (13499 MB) |
@@ -76,5 +77,4 @@ Not attempted, or stopped by the job's deadline.
 | c9e556968c9b | ogbn-arxiv | nhdp | heads-4 | 10 | 2 |
 | d25777f0966a | ogbn-arxiv | nhdp | heads-6 | 10 | 3 |
 | 6439436e01a9 | ogbn-arxiv | nhdp | heads-16 | 10 | 3 |
-| b3bc919eff5b | ogbn-arxiv | nhdp | heads-6 | 10 | 4 |
 | 41e2fe5266f4 | ogbn-arxiv | nhdp | heads-18 | 10 | 4 |
