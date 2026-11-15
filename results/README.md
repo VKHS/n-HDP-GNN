@@ -29,9 +29,11 @@ branch `results/<sweep>`, whose tables are therefore current but incomplete.
 Runs completed by the first launch of Tables 2-5 and Fig. 11 (commit 4f00db1, cancelled) were
 kept: the code that trains and evaluates the models is the same at both commits (only the
 sweep runner changed), and every run records its commit. Runs of the same configuration are
-not always bit-identical between processes. Of the 98 configurations that Tables 2 and 5
-share, 73 gave the same test accuracy; the largest differences were 3.47 points for
-n-HDP-GNN, 0.53 for GCNII and 0.20 for GAT, while GCN, SGC and Graph U-Net were identical.
+not always bit-identical between processes, also at the same commit. Of the 155 configurations
+that Tables 2 and 5 share, 126 gave the same test accuracy. The 29 that differ are 13 of 20 for
+n-HDP-GNN (largest difference 3.47 points), 7 of 20 for GCNII (0.53), 4 of 20 for GAT (0.20),
+2 of 15 for Graph U-Net (0.10), 2 of 20 for APPNP (0.08) and 1 of 20 for ARMA (0.03); GCN and
+SGC gave the same test accuracy in all 20. The cause has not been identified.
 
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
@@ -68,8 +70,8 @@ possible p-value is 0.002 (all ten pairs in the same direction).
 * The full model is below the two-head variant on Photo (86.80 vs 92.33) and does
   not exceed it on the other graphs.
 * Without the hierarchy (GAT with residual connections) accuracy is higher than the
-  full model on Cora (+6.36), CiteSeer (+2.18) and Photo (+6.88), each with p = 0.002,
-  and equal on PubMed (p = 0.63).
+  full model on Cora (+6.35), CiteSeer (+2.18) and Photo (+6.88), each with p = 0.002,
+  and not different on PubMed (+0.20, p = 0.625).
 * Turning the gate off in the full model raises Cora accuracy from 80.44 to 86.37
   (p = 0.002); on Photo it is lower but highly variable (78.48 ± 7.37, p = 0.11).
   This matches the training-free depth study in `artifacts/`, where the n-HDP gate
@@ -120,7 +122,9 @@ head count is in [fig11_heads/README.md](fig11_heads/README.md).
 | 12 | 82.96 ± 0.91 | 71.48 ± 3.41 | 87.55 ± 0.51 | 64.41 ± 30.06 | failed: memory |
 | 18 | 82.81 ± 1.53 | 67.74 ± 6.56 | 87.21 ± 0.95 | 62.88 ± 31.03 | failed: memory |
 
-* One head is the worst setting on every graph (CiteSeer seeds range from 21% to 69%).
+* One head is the worst setting on Cora, CiteSeer and PubMed (CiteSeer seeds range from 21% to
+  69%) and on ogbn-arxiv, where only one and two heads finished. On Photo it gives 63.30 ± 21.21,
+  above the means of 16 heads (55.34 ± 22.29) and 18 heads (62.88 ± 31.03).
 * From two heads on, the means vary within 2.1 points on Cora (80.89-82.96), 3.7 on
   CiteSeer (67.74-71.48) and 0.6 on PubMed (87.21-87.77).
 * On Photo, accuracy is highest with two heads and becomes unstable with more: from 8 heads
@@ -163,7 +167,7 @@ memory. With 10 seeds the smallest possible p-value is 0.002.
   than 150 minutes); with 10 and 15 pooling levels (depth 20 and 30) it gives NaN outputs on Cora
   and CiteSeer. Those 40 runs ended in an exception in the diagnostics and are recorded as errors;
   the current code records such runs as diverged, and they are being re-run to label them so.
-* Cost at depth 30 (one thread, four runs per 4-vCPU runner): n-HDP-GNN takes 0.70, 0.94, 4.0 and
+* Cost at depth 30 (one thread, four runs per 4-vCPU runner): n-HDP-GNN takes 0.70, 0.93, 4.0 and
   9.2 s per epoch on Cora, CiteSeer, PubMed and Photo, about as much as GAT (0.51, 0.76, 3.6, 9.2)
   and more than GCN (0.32, 0.60, 3.2, 5.4) and APPNP (0.13, 0.35, 0.45, 0.74); SGC recomputes its
   propagation in every epoch (`cached=False`) and is the slowest. Its peak memory at depth 30 is
