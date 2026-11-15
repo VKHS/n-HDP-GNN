@@ -18,10 +18,12 @@ name: reproduce
 # table sets the selection (`only`, e.g. to leave out graphs that need a cluster),
 # `runs_per_job`, `memory_gb` and `run_minutes`.
 #
-# Results are uploaded as the artifact "results-<sweep name>" and, if publish is
-# true, pushed to the branch results/<sweep name> (one commit containing only the
-# results/ directory).  Multi-node scaling (Tables 9-12) and OGB-scale runs need a
-# cluster: see scripts/launch_cluster.sh and docs/REPRODUCING.md.
+# If publish is true, every job merges its records into the branch results/<sweep
+# name> when it finishes (scripts/publish_results.py: fetch, merge, rebuild the
+# tables, push; repeated if another job pushed first), so the branch grows as jobs
+# finish.  The aggregate job repeats the merge with all artifacts at the end and
+# shows the tables in the run summary.  Multi-node scaling (Tables 9-12) and
+# OGB-scale runs need a cluster: see scripts/launch_cluster.sh and docs/REPRODUCING.md.
 
 on:
   workflow_dispatch:
@@ -190,6 +192,18 @@ jobs:
           path: runs/
           if-no-files-found: ignore
           retention-days: 30
+      - name: Publish to results branch
+        if: always() && needs.plan.outputs.publish == 'true'
+        env:
+          NAME: ${{ needs.plan.outputs.name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--records "runs/$NAME" --message "Results of $NAME: job ${{ matrix.job }} of $RUN_URL ($GITHUB_SHA)")
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          for kv in $SET; do args+=(--set "$kv"); done
+          python scripts/publish_results.py "$CONFIG" "${args[@]}"
 
   aggregate:
     needs: [plan, sweep]
@@ -225,33 +239,26 @@ jobs:
           ONLY: ${{ needs.plan.outputs.only }}
           SET: ${{ needs.plan.outputs.set }}
           NAME: ${{ needs.plan.outputs.name }}
+          PUBLISH: ${{ needs.plan.outputs.publish }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          mkdir -p collected
+          rm -rf "results/$NAME"                              # the copy in the checkout, if any
           args=()
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
           for kv in $SET; do args+=(--set "$kv"); done
-          mkdir -p collected
-          [ -d previous ] && args+=(--runs previous)          # records of this run take precedence
-          rm -rf "results/$NAME"                              # the copy in the checkout, if any
-          python scripts/make_tables.py "$CONFIG" --runs collected --out "results/$NAME" "${args[@]}"
+          if [ "$PUBLISH" = "true" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            python scripts/publish_results.py "$CONFIG" --records collected --out "results/$NAME" \
+              --message "Results of $NAME: all jobs of $RUN_URL ($GITHUB_SHA)" "${args[@]}"
+          else
+            [ -d previous ] && args+=(--runs previous)        # records of this run take precedence
+            python scripts/make_tables.py "$CONFIG" --runs collected --out "results/$NAME" "${args[@]}"
+          fi
           cat "results/$NAME/README.md" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: results-${{ needs.plan.outputs.name }}
           path: results/${{ needs.plan.outputs.name }}/
           retention-days: 90
-      - name: Publish to results branch
-        if: needs.plan.outputs.publish == 'true'
-        env:
-          NAME: ${{ needs.plan.outputs.name }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          cp -r "results/$NAME" /tmp/sweep-results
-          git checkout --orphan "results/$NAME"
-          git rm -rq --cached .
-          git clean -fdxq
-          rm -rf results && mkdir -p results && cp -r /tmp/sweep-results "results/$NAME"
-          git add results
-          git commit -qm "Results of $NAME from $GITHUB_SHA ($RUN_URL)"
-          git push -f origin "results/$NAME"

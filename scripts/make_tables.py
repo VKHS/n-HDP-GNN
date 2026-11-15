@@ -98,8 +98,9 @@ def main(argv=None) -> None:
         for f in load_failures(d):
             if f.get("key") in expected:
                 recorded.setdefault(f["key"], f)
-    results, done = list(found.values()), set(found)
-    failed = {k: f for k, f in recorded.items() if k not in done}
+    # sorted, so that the same records always give byte-identical tables
+    results, done = [found[k] for k in sorted(found)], set(found)
+    failed = {k: recorded[k] for k in sorted(recorded) if k not in done}
     failures = list(failed.values())
     missing = [expected[k] for k in expected if k not in done and k not in failed]
     commits = sorted({r.get("code_commit") for r in results + failures if r.get("code_commit")})

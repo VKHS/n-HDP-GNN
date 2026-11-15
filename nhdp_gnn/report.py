@@ -178,7 +178,7 @@ def write_csv(table, rows, cols, by, path, failures=None) -> None:
             seeds = table.get(bk, {}).get((rk, ck), {})
             m, h = mean_ci(list(seeds.values())) if seeds else (float("nan"), float("nan"))
             bad = dict(failures.get(bk, {}).get((rk, ck), {}))
-            w.writerow(list(bk) + list(rk) + list(ck) + [m, h, len(seeds), json.dumps(seeds),
+            w.writerow(list(bk) + list(rk) + list(ck) + [m, h, len(seeds), json.dumps(dict(sorted(seeds.items()))),
                                                          json.dumps(bad) if bad else ""])
 
 

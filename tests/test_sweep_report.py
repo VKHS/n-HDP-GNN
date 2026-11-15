@@ -166,3 +166,61 @@ def test_unpacked_results_continue_a_sweep(tmp_path):
              "--out", str(tmp_path / "res2")])
     summary = json.loads((tmp_path / "res2" / "summary.json").read_text())
     assert (summary["completed"], summary["failed"], summary["missing"]) == (4, 0, 0)
+
+
+def test_publish_merges_concurrent_pushes_into_the_results_branch(tmp_path):
+    """Two jobs publish their own records at the same time; the branch ends up with both."""
+    import shutil
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    if shutil.which("git") is None:
+        pytest.skip("git is not installed")
+    root = Path(__file__).resolve().parents[1]
+
+    def git(*a, cwd):
+        return subprocess.run(["git", *a], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+
+    origin = tmp_path / "origin.git"
+    git("init", "-q", "--bare", str(origin), cwd=tmp_path)
+    seed_repo = tmp_path / "seed"
+    git("init", "-q", str(seed_repo), cwd=tmp_path)
+    for k, v in (("user.name", "t"), ("user.email", "t@example.org")):
+        git("config", k, v, cwd=seed_repo)
+    (seed_repo / "README").write_text("x\n")
+    git("add", "README", cwd=seed_repo)
+    git("commit", "-qm", "init", cwd=seed_repo)
+    git("push", "-q", str(origin), "HEAD:refs/heads/main", cwd=seed_repo)
+
+    cfg = tmp_path / "t.toml"
+    cfg.write_text('name = "t"\n[base]\ndataset = "cora"\n[grid]\nseed = [0, 1, 2, 3]\n')
+    cfgs = select(expand(tomllib.load(open(cfg, "rb"))))
+    procs = []
+    for job, seeds in (("a", (0, 1)), ("b", (2, 3))):
+        clone = tmp_path / job
+        git("clone", "-q", str(origin), str(clone), cwd=tmp_path)
+        for k, v in (("user.name", "bot"), ("user.email", "bot@example.org")):
+            git("config", k, v, cwd=clone)
+        rec = tmp_path / f"rec_{job}"
+        rec.mkdir()
+        for c in cfgs:
+            if c.seed in seeds:
+                (rec / f"{c.key()}.json").write_text(json.dumps(
+                    {"key": c.key(), "config": {"dataset": "cora", "model": "nhdp", "depth": 2, "seed": c.seed,
+                                                "tag": ""}, "test": 0.5 + 0.1 * c.seed}))
+        procs.append(subprocess.Popen([sys.executable, str(root / "scripts" / "publish_results.py"), str(cfg),
+                                       "--records", str(rec), "--backoff", "0.5"], cwd=clone,
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True))
+    outs = [p.communicate(timeout=120)[0] for p in procs]
+    assert all(p.returncode == 0 for p in procs), outs
+
+    check = tmp_path / "check"
+    git("clone", "-q", "-b", "results/t", str(origin), str(check), cwd=tmp_path)
+    summary = json.loads((check / "results" / "t" / "summary.json").read_text())
+    assert (summary["completed"], summary["missing"]) == (4, 0)
+    assert int(git("rev-list", "--count", "HEAD", cwd=check)) == 2          # one commit per job, no force-push
+    # publishing nothing new leaves the branch as it is
+    again = subprocess.run([sys.executable, str(root / "scripts" / "publish_results.py"), str(cfg)],
+                           cwd=tmp_path / "a", capture_output=True, text=True, check=True)
+    assert "already up to date" in again.stdout

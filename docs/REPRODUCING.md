@@ -89,14 +89,17 @@ run_minutes = 150                                       # default 150
 note = "why the selection leaves runs out (printed in the results README)"
 ```
 
-The aggregate job writes `results/<name>/` with `scripts/make_tables.py`, shows the
-tables in the run summary, uploads them as an artifact and, with `publish` (default),
-pushes them to the branch `results/<name>`. Running the workflow again for the same
-sweep continues it: runs recorded on `results/<name>` (completed, or failed for memory
-or time) are not repeated, and the new tables merge both. Start it with `fresh` (or
-delete the branch) to repeat everything, e.g. after a change to the code. Runs that a
-job's deadline stopped are listed as missing and are run by the next invocation.
-OGB-scale and multi-node runs need a cluster.
+With `publish` (default), every job merges its records into the branch `results/<name>`
+when it finishes (`scripts/publish_results.py` fetches the branch, adds the job's records,
+rebuilds the tables with `scripts/make_tables.py` and pushes a new commit, starting over
+if another job pushed first), so the branch shows the tables of all finished jobs while
+the sweep runs. The aggregate job repeats the merge with every artifact at the end, shows
+the tables in the run summary and uploads them as an artifact. Running the workflow again
+for the same sweep continues it: runs recorded on `results/<name>` (completed, or failed
+for memory or time) are not repeated. Start it with `fresh` (or delete the branch) to
+repeat everything, e.g. after a change to the code. Runs that a job's deadline stopped
+are listed as missing and are run by the next invocation. OGB-scale and multi-node runs
+need a cluster.
 
 ## Measured artifacts without training
 

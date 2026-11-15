@@ -14,7 +14,10 @@
 - The reproduce workflow uses the worker pool (13 GB of a runner's 16 GB, swap off), reads an
   optional `[actions]` table from the sweep file (selection, runs per job, memory, time limit) and
   continues a sweep from its results branch (`scripts/unpack_results.py`) unless started with
-  `fresh`.
+  `fresh`. Every job merges its records into the results branch when it finishes
+  (`scripts/publish_results.py`, retried when another job pushed first), so results appear while
+  a sweep runs instead of after its last job.
+- Tables are byte-identical for the same records, whatever order the records are read in.
 - Table 5 and Fig. 11 run on GitHub-hosted runners for Cora, CiteSeer, PubMed, Photo and
   ogbn-arxiv; ogbn-products and ogbn-proteins are left to a cluster.
 - The first launch of Tables 2-5 and Fig. 11 (commit 4f00db1) was cancelled. The runners of the
