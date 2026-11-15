@@ -1,12 +1,12 @@
 # table3_semi
 
-Sweep `configs/table3_semi.toml`: 2400 runs expected, 2241 completed, 159 failed (40 error, 88 memory, 31 time), 0 missing.
+Sweep `configs/table3_semi.toml`: 2400 runs expected, 2241 completed, 159 failed (40 diverged, 88 memory, 31 time), 0 missing.
 
 Values are mean ± 95% t-interval over seeds; n is the number of completed seeds in the cell.
 
-Failed runs are counted per cell by reason: *error*: the run raised an exception; *memory*: the run needed more memory than the budget while running alone; *time*: training provably needed more than the time limit (or the run exceeded the wall-clock limit).
+Failed runs are counted per cell by reason: *diverged*: the selected model gave non-finite outputs (NaN or infinity); *memory*: the run needed more memory than the budget while running alone; *time*: training provably needed more than the time limit (or the run exceeded the wall-clock limit).
 
-Code commit(s) of the runs: 0f7045972e60a86d7966841bc3e5c4bfe0caa016, 4f00db1371643ba63fd5a37ce4d9e24d08bf1f24
+Code commit(s) of the runs: 0f7045972e60a86d7966841bc3e5c4bfe0caa016, 175ad0c0adece5bdda3e2f5dc59c1f00889c333b, 4f00db1371643ba63fd5a37ce4d9e24d08bf1f24
 
 ## test (accuracy in %)
 
@@ -20,7 +20,7 @@ Code commit(s) of the runs: 0f7045972e60a86d7966841bc3e5c4bfe0caa016, 4f00db1371
 | gat | 70.71 ± 0.45 (n=10) | 67.97 ± 0.98 (n=10) | 63.65 ± 1.40 (n=10) | 62.43 ± 2.04 (n=10) | 21.31 ± 3.54 (n=10) | 19.15 ± 2.01 (n=10) |
 | gcn | 69.54 ± 0.68 (n=10) | 65.60 ± 1.55 (n=10) | 56.49 ± 1.08 (n=10) | 54.57 ± 2.15 (n=10) | 36.39 ± 2.49 (n=10) | 34.07 ± 2.26 (n=10) |
 | gcnii | 64.34 ± 1.40 (n=10) | 63.94 ± 1.98 (n=10) | 64.51 ± 1.25 (n=10) | 63.80 ± 1.43 (n=10) | 67.37 ± 1.21 (n=10) | 69.24 ± 1.13 (n=10) |
-| graphunet | 64.10 ± 1.11 (n=10) | 62.61 ± 2.22 (n=10) | 62.17 ± 1.52 (n=10) | 63.12 ± 1.65 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 64.10 ± 1.11 (n=10) | 62.61 ± 2.22 (n=10) | 62.17 ± 1.52 (n=10) | 63.12 ± 1.65 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 61.49 ± 2.10 (n=10) | 60.32 ± 2.53 (n=10) | 58.06 ± 1.59 (n=10) | 57.33 ± 2.91 (n=10) | 55.81 ± 4.84 (n=10) | 54.60 ± 2.01 (n=10) |
 | pairnorm | 66.70 ± 1.01 (n=10) | 63.08 ± 1.08 (n=10) | 50.71 ± 3.46 (n=10) | 45.74 ± 2.55 (n=10) | 34.87 ± 5.15 (n=10) | 36.21 ± 1.77 (n=10) |
 | sgc | 67.35 ± 0.59 (n=10) | 68.18 ± 0.46 (n=10) | 67.85 ± 0.86 (n=10) | 68.46 ± 0.49 (n=10) | 68.03 ± 0.72 (n=10) | 68.35 ± 0.78 (n=10) |
@@ -49,7 +49,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 81.85 ± 0.85 (n=10) | 79.81 ± 0.88 (n=10) | 76.18 ± 1.42 (n=10) | 76.43 ± 1.52 (n=10) | 30.18 ± 3.87 (n=10) | 25.34 ± 7.21 (n=10) |
 | gcn | 81.70 ± 0.45 (n=10) | 78.56 ± 0.88 (n=10) | 72.11 ± 2.35 (n=10) | 70.17 ± 1.98 (n=10) | 48.00 ± 5.45 (n=10) | 30.91 ± 5.32 (n=10) |
 | gcnii | 78.28 ± 0.84 (n=10) | 78.02 ± 1.06 (n=10) | 76.79 ± 0.84 (n=10) | 77.16 ± 1.01 (n=10) | 77.76 ± 0.89 (n=10) | 79.84 ± 0.82 (n=10) |
-| graphunet | 79.18 ± 0.73 (n=10) | 77.34 ± 1.48 (n=10) | 78.11 ± 0.97 (n=10) | 77.86 ± 1.07 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 79.18 ± 0.73 (n=10) | 77.34 ± 1.48 (n=10) | 78.11 ± 0.97 (n=10) | 77.86 ± 1.07 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 62.53 ± 1.77 (n=10) | 64.19 ± 1.31 (n=10) | 61.96 ± 2.26 (n=10) | 63.88 ± 1.69 (n=10) | 59.45 ± 1.43 (n=10) | 59.77 ± 1.87 (n=10) |
 | pairnorm | 76.77 ± 1.34 (n=10) | 74.51 ± 1.77 (n=10) | 68.89 ± 3.22 (n=10) | 69.85 ± 1.91 (n=10) | 56.87 ± 5.47 (n=10) | 29.56 ± 9.88 (n=10) |
 | sgc | 77.82 ± 0.53 (n=10) | 78.77 ± 0.91 (n=10) | 78.19 ± 0.96 (n=10) | 77.74 ± 0.85 (n=10) | 74.92 ± 0.74 (n=10) | 71.16 ± 0.83 (n=10) |
@@ -138,7 +138,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.75 ± 0.06 (n=10) | 0.71 ± 0.08 (n=10) | 0.65 ± 0.05 (n=10) | 0.62 ± 0.07 (n=10) | 0.00 ± 0.00 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcn | 0.70 ± 0.09 (n=10) | 0.65 ± 0.05 (n=10) | 0.44 ± 0.08 (n=10) | 0.31 ± 0.03 (n=10) | 0.39 ± 0.08 (n=10) | 0.29 ± 0.10 (n=10) |
 | gcnii | 0.59 ± 0.05 (n=10) | 0.52 ± 0.18 (n=10) | 0.58 ± 0.06 (n=10) | 0.53 ± 0.15 (n=10) | 0.42 ± 0.13 (n=10) | 0.46 ± 0.14 (n=10) |
-| graphunet | 0.62 ± 0.06 (n=10) | 0.49 ± 0.11 (n=10) | 0.47 ± 0.10 (n=10) | 0.49 ± 0.09 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 0.62 ± 0.06 (n=10) | 0.49 ± 0.11 (n=10) | 0.47 ± 0.10 (n=10) | 0.49 ± 0.09 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.54 ± 0.10 (n=10) | 0.49 ± 0.16 (n=10) | 0.55 ± 0.12 (n=10) | 0.44 ± 0.13 (n=10) | 0.52 ± 0.16 (n=10) | 0.45 ± 0.11 (n=10) |
 | pairnorm | 0.75 ± 0.03 (n=10) | 0.62 ± 0.05 (n=10) | 0.34 ± 0.14 (n=10) | 0.12 ± 0.14 (n=10) | 0.03 ± 0.05 (n=10) | -0.00 ± 0.06 (n=10) |
 | sgc | 0.17 ± 0.04 (n=10) | 0.21 ± 0.05 (n=10) | 0.25 ± 0.09 (n=10) | 0.25 ± 0.09 (n=10) | 0.23 ± 0.07 (n=10) | 0.21 ± 0.07 (n=10) |
@@ -153,7 +153,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.87 ± 0.04 (n=10) | 0.89 ± 0.02 (n=10) | 0.89 ± 0.02 (n=10) | 0.88 ± 0.03 (n=10) | -0.00 ± 0.00 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcn | 0.87 ± 0.05 (n=10) | 0.83 ± 0.06 (n=10) | 0.69 ± 0.06 (n=10) | 0.63 ± 0.04 (n=10) | 0.56 ± 0.15 (n=10) | 0.09 ± 0.18 (n=10) |
 | gcnii | 0.79 ± 0.03 (n=10) | 0.76 ± 0.03 (n=10) | 0.74 ± 0.05 (n=10) | 0.71 ± 0.03 (n=10) | 0.71 ± 0.04 (n=10) | 0.72 ± 0.03 (n=10) |
-| graphunet | 0.85 ± 0.05 (n=10) | 0.78 ± 0.03 (n=10) | 0.80 ± 0.06 (n=10) | 0.79 ± 0.04 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 0.85 ± 0.05 (n=10) | 0.78 ± 0.03 (n=10) | 0.80 ± 0.06 (n=10) | 0.79 ± 0.04 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.51 ± 0.09 (n=10) | 0.62 ± 0.07 (n=10) | 0.67 ± 0.05 (n=10) | 0.73 ± 0.04 (n=10) | 0.67 ± 0.09 (n=10) | 0.56 ± 0.12 (n=10) |
 | pairnorm | 0.86 ± 0.02 (n=10) | 0.86 ± 0.04 (n=10) | 0.70 ± 0.09 (n=10) | 0.61 ± 0.08 (n=10) | 0.58 ± 0.05 (n=10) | 0.10 ± 0.20 (n=10) |
 | sgc | 0.33 ± 0.09 (n=10) | 0.36 ± 0.12 (n=10) | 0.35 ± 0.12 (n=10) | 0.35 ± 0.14 (n=10) | 0.35 ± 0.16 (n=10) | 0.26 ± 0.12 (n=10) |
@@ -200,7 +200,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.88 ± 0.03 (n=10) | 0.89 ± 0.06 (n=10) | 0.90 ± 0.03 (n=10) | 0.91 ± 0.03 (n=10) | 0.00 ± 0.01 (n=10) | 0.00 ± 0.00 (n=10) |
 | gcn | 0.83 ± 0.04 (n=10) | 0.85 ± 0.03 (n=10) | 0.77 ± 0.05 (n=10) | 0.71 ± 0.03 (n=10) | 0.79 ± 0.08 (n=10) | 0.69 ± 0.08 (n=10) |
 | gcnii | 0.78 ± 0.03 (n=10) | 0.71 ± 0.21 (n=10) | 0.83 ± 0.04 (n=10) | 0.76 ± 0.19 (n=10) | 0.67 ± 0.19 (n=10) | 0.70 ± 0.18 (n=10) |
-| graphunet | 0.79 ± 0.05 (n=10) | 0.70 ± 0.05 (n=10) | 0.70 ± 0.06 (n=10) | 0.76 ± 0.05 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 0.79 ± 0.05 (n=10) | 0.70 ± 0.05 (n=10) | 0.70 ± 0.06 (n=10) | 0.76 ± 0.05 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.61 ± 0.05 (n=10) | 0.55 ± 0.09 (n=10) | 0.58 ± 0.05 (n=10) | 0.52 ± 0.08 (n=10) | 0.55 ± 0.12 (n=10) | 0.56 ± 0.05 (n=10) |
 | pairnorm | 0.84 ± 0.01 (n=10) | 0.84 ± 0.04 (n=10) | 0.77 ± 0.08 (n=10) | 0.66 ± 0.08 (n=10) | 0.49 ± 0.15 (n=10) | 0.57 ± 0.09 (n=10) |
 | sgc | 0.42 ± 0.06 (n=10) | 0.48 ± 0.07 (n=10) | 0.55 ± 0.12 (n=10) | 0.55 ± 0.12 (n=10) | 0.54 ± 0.11 (n=10) | 0.52 ± 0.11 (n=10) |
@@ -215,7 +215,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.66 ± 0.04 (n=10) | 0.69 ± 0.03 (n=10) | 0.70 ± 0.05 (n=10) | 0.73 ± 0.03 (n=10) | 0.00 ± 0.00 (n=10) | 0.00 ± 0.00 (n=10) |
 | gcn | 0.66 ± 0.03 (n=10) | 0.67 ± 0.04 (n=10) | 0.61 ± 0.05 (n=10) | 0.59 ± 0.04 (n=10) | 0.65 ± 0.17 (n=10) | 0.20 ± 0.22 (n=10) |
 | gcnii | 0.62 ± 0.03 (n=10) | 0.63 ± 0.03 (n=10) | 0.65 ± 0.04 (n=10) | 0.63 ± 0.03 (n=10) | 0.65 ± 0.04 (n=10) | 0.66 ± 0.02 (n=10) |
-| graphunet | 0.70 ± 0.03 (n=10) | 0.67 ± 0.04 (n=10) | 0.69 ± 0.03 (n=10) | 0.69 ± 0.04 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 0.70 ± 0.03 (n=10) | 0.67 ± 0.04 (n=10) | 0.69 ± 0.03 (n=10) | 0.69 ± 0.04 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.34 ± 0.05 (n=10) | 0.37 ± 0.02 (n=10) | 0.39 ± 0.02 (n=10) | 0.44 ± 0.03 (n=10) | 0.41 ± 0.05 (n=10) | 0.37 ± 0.06 (n=10) |
 | pairnorm | 0.65 ± 0.03 (n=10) | 0.70 ± 0.04 (n=10) | 0.56 ± 0.06 (n=10) | 0.51 ± 0.05 (n=10) | 0.51 ± 0.07 (n=10) | 0.24 ± 0.14 (n=10) |
 | sgc | 0.37 ± 0.06 (n=10) | 0.42 ± 0.08 (n=10) | 0.45 ± 0.09 (n=10) | 0.46 ± 0.10 (n=10) | 0.49 ± 0.11 (n=10) | 0.45 ± 0.10 (n=10) |
@@ -262,7 +262,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.33 ± 0.03 (n=10) | 0.37 ± 0.03 (n=10) | 0.43 ± 0.05 (n=10) | 0.45 ± 0.05 (n=10) | 0.59 ± 0.06 (n=10) | 0.76 ± 0.07 (n=10) |
 | gcn | 0.32 ± 0.03 (n=10) | 0.33 ± 0.03 (n=10) | 0.34 ± 0.04 (n=10) | 0.38 ± 0.04 (n=10) | 0.48 ± 0.05 (n=10) | 0.53 ± 0.07 (n=10) |
 | gcnii | 0.32 ± 0.03 (n=10) | 0.35 ± 0.02 (n=10) | 0.32 ± 0.03 (n=10) | 0.44 ± 0.02 (n=10) | 0.50 ± 0.05 (n=10) | 0.54 ± 0.05 (n=10) |
-| graphunet | 0.31 ± 0.03 (n=10) | 0.36 ± 0.04 (n=10) | 0.41 ± 0.05 (n=10) | 0.44 ± 0.04 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 0.31 ± 0.03 (n=10) | 0.36 ± 0.04 (n=10) | 0.41 ± 0.05 (n=10) | 0.44 ± 0.04 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.38 ± 0.05 (n=10) | 0.38 ± 0.04 (n=10) | 0.53 ± 0.04 (n=10) | 0.50 ± 0.04 (n=10) | 0.77 ± 0.09 (n=10) | 0.87 ± 0.15 (n=10) |
 | pairnorm | 0.33 ± 0.03 (n=10) | 0.37 ± 0.03 (n=10) | 0.39 ± 0.04 (n=10) | 0.39 ± 0.04 (n=10) | 0.52 ± 0.05 (n=10) | 0.63 ± 0.05 (n=10) |
 | sgc | 0.53 ± 0.05 (n=10) | 1.13 ± 0.11 (n=10) | 2.15 ± 0.22 (n=10) | 2.76 ± 0.27 (n=10) | 5.57 ± 0.47 (n=10) | 7.91 ± 0.79 (n=10) |
@@ -277,7 +277,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.10 ± 0.01 (n=10) | 0.12 ± 0.01 (n=10) | 0.19 ± 0.02 (n=10) | 0.21 ± 0.03 (n=10) | 0.33 ± 0.03 (n=10) | 0.43 ± 0.05 (n=10) |
 | gcn | 0.09 ± 0.01 (n=10) | 0.11 ± 0.01 (n=10) | 0.13 ± 0.02 (n=10) | 0.15 ± 0.01 (n=10) | 0.23 ± 0.02 (n=10) | 0.28 ± 0.04 (n=10) |
 | gcnii | 0.10 ± 0.01 (n=10) | 0.12 ± 0.01 (n=10) | 0.14 ± 0.02 (n=10) | 0.16 ± 0.02 (n=10) | 0.24 ± 0.02 (n=10) | 0.30 ± 0.04 (n=10) |
-| graphunet | 0.11 ± 0.01 (n=10) | 0.17 ± 0.02 (n=10) | 0.33 ± 0.05 (n=10) | 0.35 ± 0.03 (n=10) | failed: 10 error | failed: 10 error |
+| graphunet | 0.11 ± 0.01 (n=10) | 0.17 ± 0.02 (n=10) | 0.33 ± 0.05 (n=10) | 0.35 ± 0.03 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.13 ± 0.01 (n=10) | 0.16 ± 0.01 (n=10) | 0.19 ± 0.02 (n=10) | 0.30 ± 0.02 (n=10) | 0.47 ± 0.07 (n=10) | 0.64 ± 0.10 (n=10) |
 | pairnorm | 0.09 ± 0.01 (n=10) | 0.11 ± 0.01 (n=10) | 0.15 ± 0.02 (n=10) | 0.16 ± 0.02 (n=10) | 0.24 ± 0.02 (n=10) | 0.34 ± 0.03 (n=10) |
 | sgc | 0.21 ± 0.02 (n=10) | 0.43 ± 0.04 (n=10) | 0.87 ± 0.08 (n=10) | 1.11 ± 0.06 (n=10) | 2.14 ± 0.17 (n=10) | 3.07 ± 0.32 (n=10) |
@@ -324,7 +324,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 764.73 ± 0.49 (n=10) | 786.67 ± 1.92 (n=10) | 842.18 ± 1.50 (n=10) | 862.51 ± 1.77 (n=10) | 986.00 ± 3.54 (n=10) | 1103.27 ± 2.57 (n=10) |
 | gcn | 752.80 ± 0.54 (n=10) | 758.33 ± 0.55 (n=10) | 771.99 ± 0.69 (n=8) | 779.43 ± 1.11 (n=8) | 815.89 ± 5.77 (n=10) | 855.48 ± 6.01 (n=10) |
 | gcnii | 759.69 ± 1.30 (n=4) |  |  |  | 843.26 ± 1.51 (n=10) | 890.93 ± 2.85 (n=6) |
-| graphunet | 966.94 ± 56.36 (n=10) | 1120.65 ± 79.25 (n=10) | 1536.84 ± 250.63 (n=8) | 1732.35 ± 180.54 (n=8) | failed: 10 error | failed: 10 error |
+| graphunet | 966.94 ± 56.36 (n=10) | 1120.65 ± 79.25 (n=10) | 1536.84 ± 250.63 (n=8) | 1732.35 ± 180.54 (n=8) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 821.79 ± 2.44 (n=10) | 851.80 ± 2.99 (n=6) | 919.03 ± 3.47 (n=6) | 952.02 ± 2.33 (n=10) | 1104.14 ± 6.81 (n=8) | 1253.61 ± 10.69 (n=5) |
 | pairnorm | 754.15 ± 0.81 (n=8) | 765.46 ± 1.16 (n=8) | 790.64 ± 3.55 (n=10) | 808.47 ± 2.08 (n=6) | 876.43 ± 4.32 (n=10) | 955.39 ± 2.79 (n=10) |
 | sgc | 1087.81 ± 0.44 (n=10) | 1087.52 ± 0.55 (n=10) | 1087.75 ± 0.53 (n=10) | 1087.58 ± 0.65 (n=10) | 1087.46 ± 0.65 (n=10) | 1087.87 ± 0.54 (n=10) |
@@ -339,7 +339,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 638.10 ± 1.09 (n=10) | 651.97 ± 5.95 (n=6) | 702.67 ± 4.14 (n=6) | 721.65 ± 4.22 (n=10) | 849.46 ± 6.65 (n=8) | 965.39 ± 17.47 (n=4) |
 | gcn | 633.33 ± 1.13 (n=8) | 636.49 ± 0.97 (n=8) | 646.46 ± 3.07 (n=10) | 651.32 ± 3.71 (n=6) | 676.87 ± 3.90 (n=10) | 698.89 ± 3.16 (n=10) |
 | gcnii | 637.82 ± 0.79 (n=10) | 640.07 ± 0.92 (n=10) | 657.66 ± 3.45 (n=10) | 662.95 ± 3.68 (n=10) | 693.86 ± 3.26 (n=10) | 735.86 ± 6.79 (n=10) |
-| graphunet | 1055.64 ± 90.31 (n=8) | 1778.63 ± 216.38 (n=8) | 3305.39 ± 332.79 (n=10) | 3192.02 ± 789.31 (n=6) | failed: 10 error | failed: 10 error |
+| graphunet | 1055.64 ± 90.31 (n=8) | 1778.63 ± 216.38 (n=8) | 3305.39 ± 332.79 (n=10) | 3192.02 ± 789.31 (n=6) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 665.89 ± 6.10 (n=4) |  |  |  | 945.63 ± 8.62 (n=10) | 1100.47 ± 11.06 (n=6) |
 | pairnorm | 634.11 ± 0.90 (n=10) | 638.66 ± 2.67 (n=10) | 657.47 ± 4.50 (n=10) | 670.39 ± 4.69 (n=10) | 729.01 ± 8.18 (n=10) | 782.93 ± 5.73 (n=10) |
 | sgc | 751.49 ± 0.79 (n=10) | 774.84 ± 4.49 (n=10) | 765.72 ± 1.22 (n=8) | 778.20 ± 3.64 (n=8) | 765.44 ± 0.81 (n=10) | 765.97 ± 0.90 (n=10) |
@@ -378,46 +378,46 @@ Wilcoxon p-value vs nhdp (paired by seed)
 
 | key | dataset | model | tag | depth | seed | reason | detail |
 |---|---|---|---|---|---|---|---|
-| 67b9b23cb63b | citeseer | graphunet |  | 20 | 0 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| e6d93047929c | citeseer | graphunet |  | 20 | 1 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| aeecb8ad4632 | citeseer | graphunet |  | 20 | 2 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| e8d85074c56a | citeseer | graphunet |  | 20 | 3 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| e713695ca28a | citeseer | graphunet |  | 20 | 4 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 512cca38443e | citeseer | graphunet |  | 20 | 5 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| dbb23619e970 | citeseer | graphunet |  | 20 | 6 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 2a5e1a954d64 | citeseer | graphunet |  | 20 | 7 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| bafb17ddaee1 | citeseer | graphunet |  | 20 | 8 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 9a70ea65fa9b | citeseer | graphunet |  | 20 | 9 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 45695928c1e6 | citeseer | graphunet |  | 30 | 0 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 3595215385eb | citeseer | graphunet |  | 30 | 1 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 361b832584ab | citeseer | graphunet |  | 30 | 2 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| ff651d8f5059 | citeseer | graphunet |  | 30 | 3 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| a732a61cd23a | citeseer | graphunet |  | 30 | 4 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 0fd26434f07d | citeseer | graphunet |  | 30 | 5 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 9ebce3ac91d3 | citeseer | graphunet |  | 30 | 6 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 95070903a3a7 | citeseer | graphunet |  | 30 | 7 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 2fb67fcd2af7 | citeseer | graphunet |  | 30 | 8 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 3ec6857c1b3d | citeseer | graphunet |  | 30 | 9 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 1e87d51a8ff1 | cora | graphunet |  | 20 | 0 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 39976a8cc5de | cora | graphunet |  | 20 | 1 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| ccf67e6a7be5 | cora | graphunet |  | 20 | 2 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 8caecbe126f6 | cora | graphunet |  | 20 | 3 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 22c0b64f8786 | cora | graphunet |  | 20 | 4 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 67a9e5faf577 | cora | graphunet |  | 20 | 5 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| e09adae22981 | cora | graphunet |  | 20 | 6 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| cc6a9e47dce3 | cora | graphunet |  | 20 | 7 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 7e6b7aa08922 | cora | graphunet |  | 20 | 8 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| c16d19f89803 | cora | graphunet |  | 20 | 9 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| a737556d046c | cora | graphunet |  | 30 | 0 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 587c216a053c | cora | graphunet |  | 30 | 1 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 10b99f90088a | cora | graphunet |  | 30 | 2 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 97e2f94702ae | cora | graphunet |  | 30 | 3 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| ddb4e2beff54 | cora | graphunet |  | 30 | 4 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| f7d263112bf5 | cora | graphunet |  | 30 | 5 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| f2aa89e6a75e | cora | graphunet |  | 30 | 6 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 15fef5dcca29 | cora | graphunet |  | 30 | 7 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 5f5308b294c1 | cora | graphunet |  | 30 | 8 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
-| 5b346662a75e | cora | graphunet |  | 30 | 9 | error | KMeans does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifi... |
+| 67b9b23cb63b | citeseer | graphunet |  | 20 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| e6d93047929c | citeseer | graphunet |  | 20 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| aeecb8ad4632 | citeseer | graphunet |  | 20 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| e8d85074c56a | citeseer | graphunet |  | 20 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| e713695ca28a | citeseer | graphunet |  | 20 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 512cca38443e | citeseer | graphunet |  | 20 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| dbb23619e970 | citeseer | graphunet |  | 20 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 2a5e1a954d64 | citeseer | graphunet |  | 20 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| bafb17ddaee1 | citeseer | graphunet |  | 20 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 9a70ea65fa9b | citeseer | graphunet |  | 20 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 45695928c1e6 | citeseer | graphunet |  | 30 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 3595215385eb | citeseer | graphunet |  | 30 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 361b832584ab | citeseer | graphunet |  | 30 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| ff651d8f5059 | citeseer | graphunet |  | 30 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| a732a61cd23a | citeseer | graphunet |  | 30 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 0fd26434f07d | citeseer | graphunet |  | 30 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 9ebce3ac91d3 | citeseer | graphunet |  | 30 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 95070903a3a7 | citeseer | graphunet |  | 30 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 2fb67fcd2af7 | citeseer | graphunet |  | 30 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 3ec6857c1b3d | citeseer | graphunet |  | 30 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
+| 1e87d51a8ff1 | cora | graphunet |  | 20 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 39976a8cc5de | cora | graphunet |  | 20 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| ccf67e6a7be5 | cora | graphunet |  | 20 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 8caecbe126f6 | cora | graphunet |  | 20 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 22c0b64f8786 | cora | graphunet |  | 20 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 67a9e5faf577 | cora | graphunet |  | 20 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| e09adae22981 | cora | graphunet |  | 20 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| cc6a9e47dce3 | cora | graphunet |  | 20 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 7e6b7aa08922 | cora | graphunet |  | 20 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| c16d19f89803 | cora | graphunet |  | 20 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| a737556d046c | cora | graphunet |  | 30 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 587c216a053c | cora | graphunet |  | 30 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 10b99f90088a | cora | graphunet |  | 30 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 97e2f94702ae | cora | graphunet |  | 30 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| ddb4e2beff54 | cora | graphunet |  | 30 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| f7d263112bf5 | cora | graphunet |  | 30 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| f2aa89e6a75e | cora | graphunet |  | 30 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 15fef5dcca29 | cora | graphunet |  | 30 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 5f5308b294c1 | cora | graphunet |  | 30 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
+| 5b346662a75e | cora | graphunet |  | 30 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 9618f2b515a8 | photo | graphunet |  | 2 | 0 | memory | exceeded the 13 GB memory budget while running alone (13349 MB) |
 | 706e9de33509 | photo | graphunet |  | 2 | 1 | memory | exceeded the 13 GB memory budget while running alone (13322 MB) |
 | bc57a6e84c0b | photo | graphunet |  | 2 | 2 | memory | exceeded the 13 GB memory budget while running alone (13426 MB) |

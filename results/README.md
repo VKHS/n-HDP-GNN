@@ -52,7 +52,7 @@ through means over seeds, as the tables do.
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
 | [`table2_full`](table2_full/README.md) | Tables 2, 6-8 | 2248 / 2400 completed, 152 failed (87 memory, 25 time, 40 diverged) | complete | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781), continuing [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273); the 40 diverged runs re-run in [43731956974](https://github.com/VKHS/n-HDP-GNN/actions/runs/43731956974) |
-| [`table3_semi`](table3_semi/README.md) | Tables 3, 6-8 | 2241 / 2400 completed, 159 failed (88 memory, 31 time, 40 error) | complete; the 40 errors (Graph U-Net with NaN outputs) are being re-run to record them as diverged | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352), continuing [43645884923](https://github.com/VKHS/n-HDP-GNN/actions/runs/43645884923); the 40 errors re-run in [43763047138](https://github.com/VKHS/n-HDP-GNN/actions/runs/43763047138) |
+| [`table3_semi`](table3_semi/README.md) | Tables 3, 6-8 | 2241 / 2400 completed, 159 failed (88 memory, 31 time, 40 diverged) | complete | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352), continuing [43645884923](https://github.com/VKHS/n-HDP-GNN/actions/runs/43645884923); the 40 diverged runs re-run in [43763047138](https://github.com/VKHS/n-HDP-GNN/actions/runs/43763047138) |
 | `table4_scarce` | Tables 4, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table4_scarce/results/table4_scarce)) | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785) |
 | [`table5_clustering`](table5_clustering/README.md) | Table 5 | 190 / 200 completed, 10 failed (memory); without ogbn-products and ogbn-proteins | complete | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
 | [`fig11_heads`](fig11_heads/README.md) | Fig. 11 | 210 / 250 completed, 40 failed (30 memory, 10 time); without ogbn-products and ogbn-proteins | complete | [43678422172](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678422172), continuing [43658893455](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658893455) |
@@ -183,10 +183,11 @@ p-value is 0.002.
 * Graph U-Net finished depths 2-10 on Cora and CiteSeer but on PubMed only depth 2. It exceeded
   13 GB on Photo at every depth, and on PubMed from depth 4 it either exceeded 13 GB (28 of 50
   runs) or needed more than 150 minutes (22 of 50). With 10 and 15 pooling levels (depth 20 and
-  30) it gives NaN outputs on Cora and CiteSeer; in these 40 runs k-means in the diagnostics
-  raised `Input X contains NaN`, so they are recorded as errors. They are being re-run with the
-  current code, which records them as diverged
-  ([43763047138](https://github.com/VKHS/n-HDP-GNN/actions/runs/43763047138)).
+  30) it gives NaN outputs on Cora and CiteSeer: the model selected on validation accuracy
+  (epoch 1; 101 epochs were run) gives non-finite outputs for every node (2708 of 2708 on Cora,
+  3327 of 3327 on CiteSeer). These 40 runs have no accuracy and are listed as `diverged` in
+  `failures.jsonl.gz`, not as results. Earlier code had recorded them as errors (k-means in the
+  diagnostics raised `Input X contains NaN`); they were re-run with the current code.
 * Cost at depth 30 (one thread, four runs per 4-vCPU runner): n-HDP-GNN takes 0.64, 0.87, 3.95
   and 8.86 s per epoch on Cora, CiteSeer, PubMed and Photo, against 0.43, 0.76, 3.68 and 8.65 for
   GAT, 0.28, 0.53, 2.96 and 5.25 for GCN and 0.13, 0.36, 0.40 and 0.74 for APPNP. SGC recomputes
