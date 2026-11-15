@@ -1,10 +1,10 @@
 # table2_full
 
-Sweep `configs/table2_full.toml`: 2400 runs expected, 2248 completed, 152 failed (20 diverged, 20 error, 87 memory, 25 time), 0 missing.
+Sweep `configs/table2_full.toml`: 2400 runs expected, 2248 completed, 152 failed (40 diverged, 87 memory, 25 time), 0 missing.
 
 Values are mean ± 95% t-interval over seeds; n is the number of completed seeds in the cell.
 
-Failed runs are counted per cell by reason: *diverged*: the selected model gave non-finite outputs (NaN or infinity); *error*: the run raised an exception; *memory*: the run needed more memory than the budget while running alone; *time*: training provably needed more than the time limit (or the run exceeded the wall-clock limit).
+Failed runs are counted per cell by reason: *diverged*: the selected model gave non-finite outputs (NaN or infinity); *memory*: the run needed more memory than the budget while running alone; *time*: training provably needed more than the time limit (or the run exceeded the wall-clock limit).
 
 Code commit(s) of the runs: 0609f3d9721433708b98b9255a9b56025e9abfb3, 0f7045972e60a86d7966841bc3e5c4bfe0caa016, 20d9d0fac98f9a83bb60e54bf36ddf1c98869b65, 4f00db1371643ba63fd5a37ce4d9e24d08bf1f24
 
@@ -20,7 +20,7 @@ Code commit(s) of the runs: 0609f3d9721433708b98b9255a9b56025e9abfb3, 0f7045972e
 | gat | 77.18 ± 1.27 (n=10) | 75.75 ± 1.91 (n=10) | 74.10 ± 1.53 (n=10) | 73.89 ± 1.68 (n=10) | 22.06 ± 2.20 (n=10) | 21.87 ± 1.49 (n=10) |
 | gcn | 76.96 ± 1.76 (n=10) | 76.04 ± 1.19 (n=10) | 73.13 ± 1.41 (n=10) | 73.04 ± 1.63 (n=10) | 66.07 ± 4.96 (n=10) | 21.79 ± 0.71 (n=10) |
 | gcnii | 75.66 ± 1.07 (n=10) | 74.94 ± 0.98 (n=10) | 74.01 ± 1.39 (n=10) | 74.34 ± 1.06 (n=10) | 75.17 ± 1.31 (n=10) | 75.84 ± 1.70 (n=10) |
-| graphunet | 76.22 ± 1.45 (n=10) | 75.44 ± 1.66 (n=10) | 75.03 ± 1.80 (n=10) | 75.06 ± 1.45 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 76.22 ± 1.45 (n=10) | 75.44 ± 1.66 (n=10) | 75.03 ± 1.80 (n=10) | 75.06 ± 1.45 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 71.49 ± 1.37 (n=10) | 71.46 ± 1.75 (n=10) | 70.83 ± 1.73 (n=10) | 70.77 ± 1.13 (n=10) | 72.03 ± 1.54 (n=10) | 71.79 ± 1.46 (n=10) |
 | pairnorm | 76.30 ± 1.19 (n=10) | 73.93 ± 1.32 (n=10) | 73.03 ± 1.43 (n=10) | 71.11 ± 2.56 (n=10) | 64.32 ± 5.60 (n=10) | 37.83 ± 11.19 (n=10) |
 | sgc | 75.50 ± 1.11 (n=10) | 74.85 ± 1.13 (n=10) | 73.46 ± 1.16 (n=10) | 73.03 ± 1.43 (n=10) | 71.99 ± 0.97 (n=10) | 71.36 ± 1.24 (n=10) |
@@ -49,7 +49,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 88.11 ± 0.79 (n=10) | 87.28 ± 0.98 (n=10) | 86.69 ± 1.28 (n=10) | 86.19 ± 0.95 (n=10) | 30.28 ± 0.21 (n=10) | 30.44 ± 0.63 (n=10) |
 | gcn | 88.28 ± 0.89 (n=10) | 87.33 ± 0.79 (n=10) | 86.06 ± 1.23 (n=10) | 85.56 ± 1.07 (n=10) | 53.48 ± 15.01 (n=10) | 30.19 ± 0.00 (n=10) |
 | gcnii | 87.57 ± 0.49 (n=10) | 86.98 ± 0.96 (n=10) | 86.30 ± 1.68 (n=10) | 85.74 ± 1.89 (n=10) | 87.31 ± 0.96 (n=10) | 87.67 ± 1.29 (n=10) |
-| graphunet | 88.33 ± 0.84 (n=10) | 87.63 ± 0.93 (n=10) | 87.67 ± 1.03 (n=10) | 88.04 ± 0.82 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 88.33 ± 0.84 (n=10) | 87.63 ± 0.93 (n=10) | 87.67 ± 1.03 (n=10) | 88.04 ± 0.82 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 80.30 ± 1.12 (n=10) | 81.35 ± 1.28 (n=10) | 82.93 ± 0.71 (n=10) | 82.91 ± 1.21 (n=10) | 82.81 ± 0.78 (n=10) | 82.87 ± 0.87 (n=10) |
 | pairnorm | 87.33 ± 1.18 (n=10) | 86.85 ± 1.04 (n=10) | 86.07 ± 1.30 (n=10) | 85.26 ± 2.07 (n=10) | 79.17 ± 1.16 (n=10) | 71.70 ± 5.00 (n=10) |
 | sgc | 46.41 ± 9.62 (n=10) | 45.59 ± 9.52 (n=10) | 39.78 ± 4.78 (n=10) | 39.33 ± 4.66 (n=10) | 37.44 ± 4.33 (n=10) | 34.98 ± 3.43 (n=10) |
@@ -138,7 +138,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.95 ± 0.02 (n=10) | 0.94 ± 0.03 (n=10) | 0.94 ± 0.03 (n=10) | 0.93 ± 0.03 (n=10) | -0.00 ± 0.00 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcn | 0.95 ± 0.05 (n=10) | 0.95 ± 0.03 (n=10) | 0.93 ± 0.02 (n=10) | 0.93 ± 0.02 (n=10) | 0.79 ± 0.05 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcnii | 0.98 ± 0.01 (n=10) | 0.93 ± 0.03 (n=10) | 0.92 ± 0.04 (n=10) | 0.95 ± 0.03 (n=10) | 0.92 ± 0.03 (n=10) | 0.89 ± 0.03 (n=10) |
-| graphunet | 0.90 ± 0.04 (n=10) | 0.90 ± 0.06 (n=10) | 0.89 ± 0.08 (n=10) | 0.86 ± 0.07 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 0.90 ± 0.04 (n=10) | 0.90 ± 0.06 (n=10) | 0.89 ± 0.08 (n=10) | 0.86 ± 0.07 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.96 ± 0.08 (n=10) | 0.99 ± 0.04 (n=10) | 0.94 ± 0.07 (n=10) | 0.95 ± 0.03 (n=10) | 0.99 ± 0.02 (n=10) | 0.94 ± 0.03 (n=10) |
 | pairnorm | 0.82 ± 0.05 (n=10) | 0.67 ± 0.04 (n=10) | 0.60 ± 0.05 (n=10) | 0.72 ± 0.06 (n=10) | 0.83 ± 0.10 (n=10) | 0.30 ± 0.23 (n=10) |
 | sgc | 0.51 ± 0.07 (n=10) | 0.51 ± 0.06 (n=10) | 0.45 ± 0.07 (n=10) | 0.42 ± 0.08 (n=10) | 0.38 ± 0.07 (n=10) | 0.38 ± 0.07 (n=10) |
@@ -153,7 +153,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.99 ± 0.01 (n=10) | 0.98 ± 0.03 (n=10) | 0.97 ± 0.02 (n=10) | 0.98 ± 0.02 (n=10) | -0.00 ± 0.00 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcn | 0.96 ± 0.02 (n=10) | 0.91 ± 0.03 (n=10) | 0.75 ± 0.04 (n=10) | 0.79 ± 0.04 (n=10) | 0.47 ± 0.29 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcnii | 0.94 ± 0.02 (n=10) | 0.86 ± 0.03 (n=10) | 0.81 ± 0.03 (n=10) | 0.82 ± 0.03 (n=10) | 0.84 ± 0.03 (n=10) | 0.86 ± 0.02 (n=10) |
-| graphunet | 0.90 ± 0.05 (n=10) | 0.78 ± 0.05 (n=10) | 0.79 ± 0.06 (n=10) | 0.84 ± 0.05 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 0.90 ± 0.05 (n=10) | 0.78 ± 0.05 (n=10) | 0.79 ± 0.06 (n=10) | 0.84 ± 0.05 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 1.00 ± 0.02 (n=10) | 1.02 ± 0.02 (n=10) | 1.02 ± 0.02 (n=10) | 1.03 ± 0.01 (n=10) | 1.03 ± 0.02 (n=10) | 1.02 ± 0.02 (n=10) |
 | pairnorm | 0.71 ± 0.03 (n=10) | 0.67 ± 0.02 (n=10) | 0.66 ± 0.02 (n=10) | 0.69 ± 0.03 (n=10) | 0.84 ± 0.03 (n=10) | 0.76 ± 0.05 (n=10) |
 | sgc | 0.04 ± 0.07 (n=10) | 0.04 ± 0.06 (n=10) | 0.00 ± 0.00 (n=10) | 0.00 ± 0.00 (n=10) | 0.00 ± 0.00 (n=10) | 0.00 ± 0.00 (n=10) |
@@ -200,7 +200,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.91 ± 0.01 (n=10) | 0.95 ± 0.02 (n=10) | 0.94 ± 0.02 (n=10) | 0.94 ± 0.02 (n=10) | 0.00 ± 0.00 (n=10) | 0.00 ± 0.00 (n=10) |
 | gcn | 0.90 ± 0.02 (n=10) | 0.91 ± 0.02 (n=10) | 0.91 ± 0.02 (n=10) | 0.92 ± 0.02 (n=10) | 0.91 ± 0.02 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcnii | 0.89 ± 0.02 (n=10) | 0.89 ± 0.03 (n=10) | 0.92 ± 0.03 (n=10) | 0.92 ± 0.03 (n=10) | 0.92 ± 0.02 (n=10) | 0.90 ± 0.03 (n=10) |
-| graphunet | 0.89 ± 0.02 (n=10) | 0.87 ± 0.04 (n=10) | 0.87 ± 0.04 (n=10) | 0.85 ± 0.04 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 0.89 ± 0.02 (n=10) | 0.87 ± 0.04 (n=10) | 0.87 ± 0.04 (n=10) | 0.85 ± 0.04 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.66 ± 0.04 (n=10) | 0.69 ± 0.03 (n=10) | 0.68 ± 0.04 (n=10) | 0.68 ± 0.02 (n=10) | 0.74 ± 0.02 (n=10) | 0.72 ± 0.03 (n=10) |
 | pairnorm | 0.82 ± 0.04 (n=10) | 0.76 ± 0.02 (n=10) | 0.74 ± 0.02 (n=10) | 0.77 ± 0.03 (n=10) | 0.89 ± 0.05 (n=10) | 0.51 ± 0.28 (n=10) |
 | sgc | 0.61 ± 0.05 (n=10) | 0.65 ± 0.04 (n=10) | 0.63 ± 0.06 (n=10) | 0.62 ± 0.07 (n=10) | 0.61 ± 0.07 (n=10) | 0.63 ± 0.06 (n=10) |
@@ -215,7 +215,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.69 ± 0.01 (n=10) | 0.71 ± 0.03 (n=10) | 0.72 ± 0.03 (n=10) | 0.71 ± 0.04 (n=10) | 0.00 ± 0.00 (n=10) | 0.00 ± 0.00 (n=10) |
 | gcn | 0.65 ± 0.02 (n=10) | 0.63 ± 0.02 (n=10) | 0.54 ± 0.03 (n=10) | 0.58 ± 0.03 (n=10) | 0.40 ± 0.25 (n=10) | -0.00 ± 0.00 (n=10) |
 | gcnii | 0.63 ± 0.02 (n=10) | 0.59 ± 0.03 (n=10) | 0.59 ± 0.03 (n=10) | 0.59 ± 0.03 (n=10) | 0.60 ± 0.03 (n=10) | 0.63 ± 0.04 (n=10) |
-| graphunet | 0.64 ± 0.04 (n=10) | 0.59 ± 0.05 (n=10) | 0.58 ± 0.03 (n=10) | 0.61 ± 0.03 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 0.64 ± 0.04 (n=10) | 0.59 ± 0.05 (n=10) | 0.58 ± 0.03 (n=10) | 0.61 ± 0.03 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.57 ± 0.03 (n=10) | 0.59 ± 0.02 (n=10) | 0.61 ± 0.02 (n=10) | 0.63 ± 0.02 (n=10) | 0.64 ± 0.01 (n=10) | 0.65 ± 0.03 (n=10) |
 | pairnorm | 0.48 ± 0.02 (n=10) | 0.47 ± 0.02 (n=10) | 0.46 ± 0.02 (n=10) | 0.48 ± 0.03 (n=10) | 0.63 ± 0.02 (n=10) | 0.64 ± 0.02 (n=10) |
 | sgc | 0.05 ± 0.06 (n=10) | 0.05 ± 0.06 (n=10) | 0.02 ± 0.01 (n=10) | 0.02 ± 0.01 (n=10) | 0.01 ± 0.01 (n=10) | 0.01 ± 0.00 (n=10) |
@@ -262,7 +262,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.32 ± 0.04 (n=10) | 0.34 ± 0.04 (n=10) | 0.42 ± 0.05 (n=10) | 0.42 ± 0.05 (n=10) | 0.59 ± 0.07 (n=10) | 0.76 ± 0.08 (n=10) |
 | gcn | 0.28 ± 0.04 (n=10) | 0.32 ± 0.03 (n=10) | 0.35 ± 0.04 (n=10) | 0.40 ± 0.03 (n=10) | 0.46 ± 0.04 (n=10) | 0.60 ± 0.04 (n=10) |
 | gcnii | 0.36 ± 0.02 (n=10) | 0.32 ± 0.04 (n=10) | 0.38 ± 0.04 (n=10) | 0.35 ± 0.03 (n=10) | 0.44 ± 0.02 (n=10) | 0.62 ± 0.03 (n=10) |
-| graphunet | 0.35 ± 0.03 (n=10) | 0.34 ± 0.04 (n=10) | 0.46 ± 0.05 (n=10) | 0.45 ± 0.08 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 0.35 ± 0.03 (n=10) | 0.34 ± 0.04 (n=10) | 0.46 ± 0.05 (n=10) | 0.45 ± 0.08 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.36 ± 0.04 (n=10) | 0.39 ± 0.05 (n=10) | 0.51 ± 0.06 (n=10) | 0.51 ± 0.06 (n=10) | 0.76 ± 0.05 (n=10) | 0.93 ± 0.06 (n=10) |
 | pairnorm | 0.32 ± 0.02 (n=10) | 0.35 ± 0.04 (n=10) | 0.39 ± 0.04 (n=10) | 0.39 ± 0.05 (n=10) | 0.51 ± 0.05 (n=10) | 0.62 ± 0.06 (n=10) |
 | sgc | 0.56 ± 0.05 (n=10) | 1.09 ± 0.12 (n=10) | 2.29 ± 0.19 (n=10) | 2.42 ± 0.25 (n=10) | 4.81 ± 0.43 (n=10) | 7.48 ± 0.68 (n=10) |
@@ -277,7 +277,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.11 ± 0.01 (n=10) | 0.12 ± 0.01 (n=10) | 0.19 ± 0.02 (n=10) | 0.20 ± 0.02 (n=10) | 0.35 ± 0.03 (n=10) | 0.51 ± 0.04 (n=10) |
 | gcn | 0.09 ± 0.01 (n=10) | 0.11 ± 0.01 (n=10) | 0.13 ± 0.01 (n=10) | 0.16 ± 0.01 (n=10) | 0.22 ± 0.02 (n=10) | 0.32 ± 0.02 (n=10) |
 | gcnii | 0.09 ± 0.01 (n=10) | 0.10 ± 0.01 (n=10) | 0.14 ± 0.01 (n=10) | 0.17 ± 0.01 (n=10) | 0.22 ± 0.02 (n=10) | 0.34 ± 0.02 (n=10) |
-| graphunet | 0.11 ± 0.01 (n=10) | 0.18 ± 0.03 (n=10) | 0.40 ± 0.09 (n=10) | 0.36 ± 0.07 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 0.11 ± 0.01 (n=10) | 0.18 ± 0.03 (n=10) | 0.40 ± 0.09 (n=10) | 0.36 ± 0.07 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 0.13 ± 0.01 (n=10) | 0.14 ± 0.02 (n=10) | 0.23 ± 0.02 (n=10) | 0.24 ± 0.02 (n=10) | 0.40 ± 0.03 (n=10) | 0.70 ± 0.04 (n=10) |
 | pairnorm | 0.09 ± 0.01 (n=10) | 0.10 ± 0.01 (n=10) | 0.15 ± 0.02 (n=10) | 0.15 ± 0.02 (n=10) | 0.25 ± 0.03 (n=10) | 0.33 ± 0.03 (n=10) |
 | sgc | 0.22 ± 0.02 (n=10) | 0.43 ± 0.04 (n=10) | 0.84 ± 0.08 (n=10) | 0.92 ± 0.10 (n=10) | 1.96 ± 0.20 (n=10) | 3.15 ± 0.33 (n=10) |
@@ -323,7 +323,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | dropedge | 752.55 ± 1.16 (n=6) | 759.54 ± 2.66 (n=2) | 771.59 ± 1.03 (n=6) | 779.14 ± 0.75 (n=10) | 805.57 ± 14.40 (n=6) | 836.85 ± 25.02 (n=6) |
 | gat | 764.77 ± 0.51 (n=9) | 787.25 ± 2.94 (n=8) | 838.35 ± 1.75 (n=10) | 864.31 ± 2.24 (n=10) | 986.95 ± 1.92 (n=10) | 1104.63 ± 3.75 (n=10) |
 | gcn | 753.30 ± 0.56 (n=8) | 758.65 ± 0.44 (n=8) | 772.36 ± 0.76 (n=10) | 779.05 ± 0.53 (n=10) | 815.65 ± 8.92 (n=8) | 848.22 ± 14.80 (n=8) |
-| graphunet | 941.79 ± 7.54 (n=8) | 1269.67 ± 50.76 (n=8) | 1734.05 ± 171.16 (n=10) | 1900.31 ± 321.34 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet | 941.79 ± 7.54 (n=8) | 1269.67 ± 50.76 (n=8) | 1734.05 ± 171.16 (n=10) | 1900.31 ± 321.34 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | nhdp | 821.78 ± 4.16 (n=6) | 854.99 ± 18.89 (n=2) | 922.75 ± 3.41 (n=6) | 952.60 ± 2.92 (n=10) | 1101.86 ± 6.14 (n=6) | 1259.50 ± 11.12 (n=6) |
 | pairnorm |  | 766.04 ± 1.85 (n=4) | 794.01 ± 1.17 (n=10) | 809.58 ± 2.07 (n=10) | 882.56 ± 3.89 (n=8) | 959.15 ± 11.43 (n=4) |
 | sgc | 1087.91 ± 0.51 (n=10) | 1087.62 ± 0.56 (n=10) | 1087.52 ± 0.56 (n=10) | 1087.80 ± 0.50 (n=10) | 1088.24 ± 0.20 (n=10) | 1087.74 ± 0.50 (n=10) |
@@ -337,7 +337,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 637.48 ± 0.96 (n=6) | 645.25 ± 4.59 (n=2) | 701.57 ± 3.39 (n=6) | 723.84 ± 3.34 (n=10) | 846.27 ± 5.90 (n=6) | 965.33 ± 12.66 (n=6) |
 | gcn |  | 638.34 ± 2.44 (n=4) | 650.54 ± 2.97 (n=10) | 651.77 ± 3.80 (n=10) | 672.95 ± 3.44 (n=8) | 702.41 ± 11.41 (n=4) |
 | gcnii | 637.84 ± 1.02 (n=10) | 642.39 ± 4.18 (n=10) | 657.32 ± 4.26 (n=10) | 663.39 ± 2.37 (n=10) | 696.11 ± 5.85 (n=10) | 734.77 ± 3.02 (n=10) |
-| graphunet |  | 2087.17 ± 307.50 (n=4) | 3714.57 ± 376.89 (n=10) | 3924.19 ± 692.08 (n=10) | failed: 5 diverged, 5 error | failed: 5 diverged, 5 error |
+| graphunet |  | 2087.17 ± 307.50 (n=4) | 3714.57 ± 376.89 (n=10) | 3924.19 ± 692.08 (n=10) | failed: 10 diverged | failed: 10 diverged |
 | pairnorm | 634.39 ± 0.86 (n=10) | 638.41 ± 2.43 (n=10) | 661.89 ± 3.03 (n=10) | 672.39 ± 4.82 (n=10) | 728.33 ± 4.51 (n=10) | 788.00 ± 6.32 (n=10) |
 | sgc | 751.18 ± 0.81 (n=8) | 779.50 ± 0.58 (n=8) | 765.67 ± 0.97 (n=10) | 776.07 ± 4.21 (n=10) | 766.37 ± 0.78 (n=8) | 766.03 ± 1.00 (n=8) |
 
@@ -375,45 +375,45 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | key | dataset | model | tag | depth | seed | reason | detail |
 |---|---|---|---|---|---|---|---|
 | f92dbee9fa48 | citeseer | graphunet |  | 20 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| 688eac4e4501 | citeseer | graphunet |  | 20 | 1 | error | ValueError: Input X contains NaN. |
+| 688eac4e4501 | citeseer | graphunet |  | 20 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | 420c82084ee0 | citeseer | graphunet |  | 20 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| 63da490d5c15 | citeseer | graphunet |  | 20 | 3 | error | ValueError: Input X contains NaN. |
+| 63da490d5c15 | citeseer | graphunet |  | 20 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | 9ab9502a8a8e | citeseer | graphunet |  | 20 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| 6ba919485506 | citeseer | graphunet |  | 20 | 5 | error | ValueError: Input X contains NaN. |
+| 6ba919485506 | citeseer | graphunet |  | 20 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | d36859cdfeba | citeseer | graphunet |  | 20 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| ad44d5caf93a | citeseer | graphunet |  | 20 | 7 | error | ValueError: Input X contains NaN. |
+| ad44d5caf93a | citeseer | graphunet |  | 20 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | f8b0241be37f | citeseer | graphunet |  | 20 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| ef88aea2a737 | citeseer | graphunet |  | 20 | 9 | error | ValueError: Input X contains NaN. |
+| ef88aea2a737 | citeseer | graphunet |  | 20 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | a4643ff2f4d1 | citeseer | graphunet |  | 30 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| d3aca2e1c397 | citeseer | graphunet |  | 30 | 1 | error | ValueError: Input X contains NaN. |
+| d3aca2e1c397 | citeseer | graphunet |  | 30 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | 1468d6466526 | citeseer | graphunet |  | 30 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| 18c1ed9f1c72 | citeseer | graphunet |  | 30 | 3 | error | ValueError: Input X contains NaN. |
+| 18c1ed9f1c72 | citeseer | graphunet |  | 30 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | e2e2ca517494 | citeseer | graphunet |  | 30 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| 2fe1d840db00 | citeseer | graphunet |  | 30 | 5 | error | ValueError: Input X contains NaN. |
+| 2fe1d840db00 | citeseer | graphunet |  | 30 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | 1f18c7bbecb6 | citeseer | graphunet |  | 30 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| 47d0296f725d | citeseer | graphunet |  | 30 | 7 | error | ValueError: Input X contains NaN. |
+| 47d0296f725d | citeseer | graphunet |  | 30 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | 6b1d407f6146 | citeseer | graphunet |  | 30 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
-| b79ed2b611c0 | citeseer | graphunet |  | 30 | 9 | error | ValueError: Input X contains NaN. |
+| b79ed2b611c0 | citeseer | graphunet |  | 30 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 3327 of 3327 nodes |
 | f6260c918d5d | cora | graphunet |  | 20 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 48e774657f3e | cora | graphunet |  | 20 | 1 | error | ValueError: Input X contains NaN. |
+| 48e774657f3e | cora | graphunet |  | 20 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 8743bdd4648d | cora | graphunet |  | 20 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 49928c3f264b | cora | graphunet |  | 20 | 3 | error | ValueError: Input X contains NaN. |
+| 49928c3f264b | cora | graphunet |  | 20 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 1a7d7f9f3a8a | cora | graphunet |  | 20 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 40c831f0dd86 | cora | graphunet |  | 20 | 5 | error | ValueError: Input X contains NaN. |
+| 40c831f0dd86 | cora | graphunet |  | 20 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | a9f6bd595418 | cora | graphunet |  | 20 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 946e4ffa7d6f | cora | graphunet |  | 20 | 7 | error | ValueError: Input X contains NaN. |
+| 946e4ffa7d6f | cora | graphunet |  | 20 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 1a6162836290 | cora | graphunet |  | 20 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 8735029592cc | cora | graphunet |  | 20 | 9 | error | ValueError: Input X contains NaN. |
+| 8735029592cc | cora | graphunet |  | 20 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 10f4e6c8f9b7 | cora | graphunet |  | 30 | 0 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| fab52af26d71 | cora | graphunet |  | 30 | 1 | error | ValueError: Input X contains NaN. |
+| fab52af26d71 | cora | graphunet |  | 30 | 1 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 5aef4542cdad | cora | graphunet |  | 30 | 2 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 76cbccfc79ea | cora | graphunet |  | 30 | 3 | error | ValueError: Input X contains NaN. |
+| 76cbccfc79ea | cora | graphunet |  | 30 | 3 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 18905db7b581 | cora | graphunet |  | 30 | 4 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 98d64bfe8463 | cora | graphunet |  | 30 | 5 | error | ValueError: Input X contains NaN. |
+| 98d64bfe8463 | cora | graphunet |  | 30 | 5 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 4a080cfc7a7e | cora | graphunet |  | 30 | 6 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| 591ed36173bc | cora | graphunet |  | 30 | 7 | error | ValueError: Input X contains NaN. |
+| 591ed36173bc | cora | graphunet |  | 30 | 7 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | 2d21673050f0 | cora | graphunet |  | 30 | 8 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
-| caba6821980e | cora | graphunet |  | 30 | 9 | error | ValueError: Input X contains NaN. |
+| caba6821980e | cora | graphunet |  | 30 | 9 | diverged | the selected model (epoch 1) gives non-finite outputs (NaN or infinity) for 2708 of 2708 nodes |
 | d04acbdcf3ae | photo | graphunet |  | 2 | 0 | memory | exceeded the 13 GB memory budget while running alone (13321 MB) |
 | ed3c73db5cc1 | photo | graphunet |  | 2 | 1 | memory | exceeded the 13 GB memory budget while running alone (13322 MB) |
 | 7c763923d92a | photo | graphunet |  | 2 | 2 | memory | exceeded the 13 GB memory budget while running alone (13321 MB) |
