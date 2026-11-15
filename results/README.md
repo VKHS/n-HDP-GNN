@@ -40,7 +40,7 @@ n-HDP-GNN, 0.53 for GCNII and 0.20 for GAT, while GCN, SGC and Graph U-Net were 
 | `table3_semi` | Tables 3, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table3_semi/results/table3_semi)) | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352) |
 | `table4_scarce` | Tables 4, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table4_scarce/results/table4_scarce)) | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785) |
 | [`table5_clustering`](table5_clustering/README.md) | Table 5 | 190 / 200 completed, 10 failed (memory); without ogbn-products and ogbn-proteins | complete | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
-| `fig11_heads` | Fig. 11 | 250 (without ogbn-products and ogbn-proteins) | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/fig11_heads/results/fig11_heads)) | [43678422172](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678422172) |
+| [`fig11_heads`](fig11_heads/README.md) | Fig. 11 | 210 / 250 completed, 40 failed (30 memory, 10 time); without ogbn-products and ogbn-proteins | complete | [43678422172](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678422172), continuing [43658893455](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658893455) |
 | multi-node scaling, OGB depth runs, ogbn-products and ogbn-proteins | Tables 5, 9-12, Fig. 11 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
 
 ## Table 1: component ablation (full supervision, depth 2)
@@ -105,3 +105,27 @@ Ranks count the models with results (Graph U-Net has none on Photo and ogbn-arxi
   with the 140 labels of the public split (`artifacts/`, L = 2). The SGC rows reflect the
   shared optimiser settings rather than SGC.
 * Graph U-Net exceeded the 13 GB budget on Photo and ogbn-arxiv in all five seeds.
+
+## Fig. 11: number of attention heads (n-HDP-GNN, full supervision, depth 10)
+
+Test accuracy (%), mean ± 95% interval over five seeds, with 8 channels per head; every
+head count is in [fig11_heads/README.md](fig11_heads/README.md).
+
+| Heads | Cora | CiteSeer | PubMed | Photo | ogbn-arxiv |
+|---|---|---|---|---|---|
+| 1 | 67.85 ± 9.42 | 46.93 ± 22.47 | 85.53 ± 2.41 | 63.30 ± 21.21 | 35.68 ± 11.36 |
+| 2 | 80.89 ± 2.11 | 69.97 ± 3.94 | 87.26 ± 1.04 | 89.01 ± 2.47 | 52.53 ± 5.09 |
+| 4 | 82.04 ± 2.66 | 70.33 ± 2.88 | 87.59 ± 0.89 | 88.08 ± 5.06 | failed: time |
+| 8 | 82.37 ± 1.12 | 71.05 ± 2.41 | 87.77 ± 0.67 | 81.87 ± 12.36 | failed: memory |
+| 12 | 82.96 ± 0.91 | 71.48 ± 3.41 | 87.55 ± 0.51 | 64.41 ± 30.06 | failed: memory |
+| 18 | 82.81 ± 1.53 | 67.74 ± 6.56 | 87.21 ± 0.95 | 62.88 ± 31.03 | failed: memory |
+
+* One head is the worst setting on every graph (CiteSeer seeds range from 21% to 69%).
+* From two heads on, the means vary within 2.1 points on Cora (80.89-82.96), 3.7 on
+  CiteSeer (67.74-71.48) and 0.6 on PubMed (87.21-87.77).
+* On Photo, accuracy is highest with two heads and becomes unstable with more: from 8 heads
+  on, at least one seed ends below 66%, and from 12 heads on, one seed ends between 25% and
+  32%.
+* On ogbn-arxiv only one and two heads finished: with 4 and 6 heads an epoch took 16-52 s,
+  so training provably needed more than 150 minutes; with 8 or more heads a run needed more
+  than 13 GB.

@@ -97,7 +97,7 @@ or the time limit are reported as failed, with the reason, instead of a value.
 |---|---|---|
 | Stages A and B on Cora, CiteSeer, PubMed, Photo, Computers: n-HDP convergence, community and cluster purity, gate selectivity, purity bounds of the infinite-depth limit, partition study (ρ, ρ_g, r_E) | [`artifacts/`](artifacts/README.md) | measured, included |
 | Training-free depth study: linear probe, centroid gap and MADGap of PᴸX for the normalised adjacency and the gated operators | [`artifacts/`](artifacts/README.md) | measured, included |
-| Trained models: Tables 1-8 and Fig. 11 (Cora, CiteSeer, PubMed, Photo; ogbn-arxiv in Table 5 and Fig. 11) | [`results/`](results/README.md) | Table 1 (400 runs) and Table 5 (190 of 200 runs, 10 out of memory) complete; Tables 2-4 and Fig. 11 running on GitHub Actions |
+| Trained models: Tables 1-8 and Fig. 11 (Cora, CiteSeer, PubMed, Photo; ogbn-arxiv in Table 5 and Fig. 11) | [`results/`](results/README.md) | Table 1 (400 runs), Table 5 (190 of 200 runs completed, 10 out of memory) and Fig. 11 (210 of 250, 40 out of memory or time) complete; Tables 2-4 running on GitHub Actions |
 | Multi-node scaling (Tables 9-12) and OGB-scale depth runs | `results/` | need a CPU cluster (`scripts/launch_cluster.sh`); not included yet |
 
 Every number under `artifacts/` was produced by the command recorded in

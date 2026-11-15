@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -88,8 +89,13 @@ def _fmt_key(k):
     return " / ".join(str(x) for x in k) if k else "-"
 
 
+def _natural(text: str):
+    """Sort key that orders "heads-2" before "heads-10"."""
+    return tuple((0, int(t)) if t.isdigit() else (1, t) for t in re.split(r"(\d+)", text) if t)
+
+
 def _order(k):
-    return tuple((0, x) if isinstance(x, (int, float)) else (1, str(x)) for x in k)
+    return tuple((0, x) if isinstance(x, (int, float)) else (1, _natural(str(x))) for x in k)
 
 
 def _sort(keys):
