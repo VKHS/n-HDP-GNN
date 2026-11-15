@@ -23,16 +23,24 @@ runner, within a memory budget of 13 GB of the runner's 16 GB (`nhdp_gnn.sweep -
 A run that does not fit next to the others is repeated on its own. A run that needs more than
 13 GB on its own, or whose training provably needs more than 150 minutes, is reported as
 failed with that reason instead of a value; each table lists its failed runs with the
-measurements behind the decision.
+measurements behind the decision. While a sweep runs, every finished job adds its runs to the
+branch `results/<sweep>`, whose tables are therefore current but incomplete.
+
+Runs completed by the first launch of Tables 2-5 and Fig. 11 (commit 4f00db1, cancelled) were
+kept: the code that trains and evaluates the models is the same at both commits (only the
+sweep runner changed), and every run records its commit. Runs of the same configuration are
+not always bit-identical between processes. Of the 98 configurations that Tables 2 and 5
+share, 73 gave the same test accuracy; the largest differences were 3.47 points for
+n-HDP-GNN, 0.53 for GCNII and 0.20 for GAT, while GCN, SGC and Graph U-Net were identical.
 
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
-| `table2_full` | Tables 2, 6-8 | 2400 | running | [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273) |
-| `table3_semi` | Tables 3, 6-8 | 2400 | running | [43658909026](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658909026) |
-| `table4_scarce` | Tables 4, 6-8 | 2400 | running | [43658916220](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658916220) |
-| `table5_clustering` | Table 5 | 200 of 280 (without ogbn-products and ogbn-proteins) | running | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
-| `fig11_heads` | Fig. 11 | 250 of 350 (without ogbn-products and ogbn-proteins) | running | [43658893455](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658893455) |
+| `table2_full` | Tables 2, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table2_full/results/table2_full)) | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781) |
+| `table3_semi` | Tables 3, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table3_semi/results/table3_semi)) | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352) |
+| `table4_scarce` | Tables 4, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table4_scarce/results/table4_scarce)) | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785) |
+| [`table5_clustering`](table5_clustering/README.md) | Table 5 | 190 / 200 completed, 10 failed (memory); without ogbn-products and ogbn-proteins | complete | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
+| `fig11_heads` | Fig. 11 | 250 (without ogbn-products and ogbn-proteins) | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/fig11_heads/results/fig11_heads)) | [43678422172](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678422172) |
 | multi-node scaling, OGB depth runs, ogbn-products and ogbn-proteins | Tables 5, 9-12, Fig. 11 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
 
 ## Table 1: component ablation (full supervision, depth 2)
@@ -66,3 +74,34 @@ possible p-value is 0.002 (all ten pairs in the same direction).
   (p = 0.002); on Photo it is lower but highly variable (78.48 ± 7.37, p = 0.11).
   This matches the training-free depth study in `artifacts/`, where the n-HDP gate
   preserves less class information than the ungated operator on Cora.
+
+## Table 5: classification and clustering (full supervision, depth 2)
+
+Five seeds per cell; NMI and ARI compare k-means clusters of each model's logits with the
+classes. The tables with intervals are in [table5_clustering/README.md](table5_clustering/README.md).
+Ranks count the models with results (Graph U-Net has none on Photo and ogbn-arxiv).
+
+| Dataset | n-HDP-GNN accuracy % (rank) | Highest accuracy % | n-HDP-GNN NMI / ARI (ranks) | Highest NMI / ARI of the other models |
+|---|---|---|---|---|
+| Cora | 80.93 (7 of 8) | APPNP 88.59 | 0.78 / 0.82 (4, 3 of 8) | ARMA 0.80 / ARMA 0.83 |
+| CiteSeer | 71.42 (8 of 8) | ARMA 78.04 | 0.67 / 0.72 (1, 1 of 8) | ARMA 0.61 / GCNII 0.65 |
+| PubMed | 88.06 (4 of 8) | GCNII 89.07 | 0.68 / 0.74 (1, 1 of 8) | GCNII 0.62 / GCNII 0.67 |
+| Photo | 85.04 (6 of 7) | ARMA 94.19 | 0.82 / 0.83 (2, 2 of 7) | ARMA 0.85 / ARMA 0.86 |
+| ogbn-arxiv | 61.64 (7 of 7) | GCN 67.02 | 0.43 / 0.25 (7, 6 of 7) | GCNII 0.47 / GCNII 0.29 |
+
+* n-HDP-GNN's accuracy is the lowest or second lowest on Cora, CiteSeer, Photo and
+  ogbn-arxiv, and 1.0 point below the highest on PubMed.
+* Its logits give the highest NMI and ARI on CiteSeer and PubMed and the second highest on
+  Photo. With five seeds no paired Wilcoxon test can reach p < 0.05 (the smallest two-sided
+  p-value is 0.0625), so these are differences of means: on CiteSeer the 95% intervals do not
+  overlap (NMI 0.67 ± 0.02 against ARMA's 0.61 ± 0.02); on PubMed they overlap slightly
+  (0.68 ± 0.05 against GCNII's 0.62 ± 0.01).
+* SGC underfits under the shared protocol (Cora 51.04 ± 22.88, Photo 40.89 ± 12.11). In four
+  of five seeds on each of these graphs its best validation epoch is between 1 and 67, so
+  early stopping ends training before the learning rate of 0.005 has moved its single linear
+  layer far; where it runs all 500 epochs (CiteSeer, PubMed, ogbn-arxiv) the best epoch lies
+  in the last 100, i.e. it is still improving. A logistic regression on the same propagated
+  features (rows L2-normalised, regularisation chosen on validation) reaches 80.5% on Cora
+  with the 140 labels of the public split (`artifacts/`, L = 2). The SGC rows reflect the
+  shared optimiser settings rather than SGC.
+* Graph U-Net exceeded the 13 GB budget on Photo and ogbn-arxiv in all five seeds.
