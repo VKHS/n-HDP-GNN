@@ -88,3 +88,34 @@ def timer(store: dict, key: str):
         yield
     finally:
         store[key] = store.get(key, 0.0) + time.perf_counter() - t0
+
+
+class TimeLimitExceeded(RuntimeError):
+    """Training cannot finish within its time limit; ``info`` holds the measured timings."""
+
+    def __init__(self, message: str, **info):
+        super().__init__(message)
+        self.info = info
+
+
+def cannot_finish(elapsed_s: float, fastest_epoch_s: float, epoch: int, best_epoch: int, patience: int,
+                  max_epochs: int, limit_s: float) -> bool:
+    """True if training provably exceeds ``limit_s``.
+
+    Early stopping cannot stop before epoch ``best_epoch + patience`` (nor after
+    ``max_epochs``), and no remaining epoch is assumed faster than the fastest one
+    so far, so the projection is a lower bound on the total training time.
+    """
+    if limit_s <= 0:
+        return False
+    remaining = max(0, min(best_epoch + patience, max_epochs) - epoch)
+    return elapsed_s + remaining * fastest_epoch_s > limit_s
+
+
+def peak_rss_mb() -> float:
+    """Peak resident memory of this process in MB (Linux and macOS)."""
+    import resource
+    import sys
+
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return peak / 2**20 if sys.platform == "darwin" else peak / 1024

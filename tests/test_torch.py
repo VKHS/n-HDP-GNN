@@ -199,6 +199,31 @@ def test_multi_part_training_and_embeddings(tmp_path):
     assert np.load(out / files[-1]).shape[0] == 270
 
 
+def test_sweep_workers_run_the_trainer_and_record_memory(tmp_path):
+    from nhdp_gnn import sweep
+
+    todo = [small_cfg(tmp_path, seed=s) for s in (0, 1)]
+    counts = sweep.run_pool(todo, workers=2, memory_gb=6.0, poll=0.1)
+    assert counts["ok"] == 2
+    for c in todo:
+        res = json.loads(sweep.result_path(c).read_text())
+        assert 0.0 <= res["test"] <= 1.0 and res["peak_rss_mb"] > 50 and res["code_commit"]
+
+
+def test_time_limit_stops_training_that_cannot_finish(tmp_path):
+    from nhdp_gnn import sweep
+    from nhdp_gnn.train import run as train_run
+
+    cfg = small_cfg(tmp_path, epochs=400, patience=300, max_train_minutes=1e-5)
+    assert cfg.key() == small_cfg(tmp_path, epochs=400, patience=300).key()
+    assert sweep.attempt(cfg, train_run) == "time"
+    info = json.loads(sweep.failure_path(cfg).read_text())["failure"]
+    assert info["reason"] == "time" and info["epochs_run"] == 1 and info["min_remaining_epochs"] == 300
+    assert info["min_train_s"] > info["limit_s"]
+    # without the limit the same run completes
+    assert sweep.attempt(small_cfg(tmp_path, epochs=3), train_run) == "ok"
+
+
 def test_cli_parses_types(tmp_path):
     cfg = parse_args(["--dataset", "synthetic", "--depth", "5", "--gate", "false", "--lr", "0.01",
                       "--synthetic", json.dumps(SYN)])

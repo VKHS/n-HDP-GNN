@@ -22,16 +22,24 @@ import numpy as np
 from .metrics import mean_ci, paired_wilcoxon
 
 
-def load_results(path) -> list[dict]:
-    out = []
+def _records(path):
     for f in sorted(Path(path).rglob("*.json")):
         try:
             d = json.loads(f.read_text())
         except (OSError, json.JSONDecodeError):
             continue
         if isinstance(d, dict) and "config" in d:
-            out.append(d)
-    return out
+            yield d
+
+
+def load_results(path) -> list[dict]:
+    """Run results under ``path`` (failure records are left out)."""
+    return [d for d in _records(path) if "failure" not in d]
+
+
+def load_failures(path) -> list[dict]:
+    """Failure records (``<key>.failed.json``, written by ``nhdp_gnn.sweep``) under ``path``."""
+    return [d for d in _records(path) if "failure" in d]
 
 
 def field_of(result: dict, name: str):
@@ -64,33 +72,52 @@ def aggregate(results, rows, cols, by, value):
     return table
 
 
+def aggregate_failures(failures, rows, cols, by):
+    """{by_key: {(row_key, col_key): {reason: count}}}"""
+    table = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    for r in failures:
+        table[_key(r, by)][(_key(r, rows), _key(r, cols))][r["failure"]["reason"]] += 1
+    return table
+
+
+def _failed_text(counts) -> str:
+    return ", ".join(f"{n} {reason}" for reason, n in sorted(counts.items()))
+
+
 def _fmt_key(k):
     return " / ".join(str(x) for x in k) if k else "-"
 
 
+def _order(k):
+    return tuple((0, x) if isinstance(x, (int, float)) else (1, str(x)) for x in k)
+
+
 def _sort(keys):
-    return sorted(keys, key=lambda k: tuple((0, x) if isinstance(x, (int, float)) else (1, str(x)) for x in k))
+    return sorted(keys, key=_order)
 
 
-def markdown_tables(table, rows, cols, by, value, reference=None, scale=1.0) -> str:
+def markdown_tables(table, rows, cols, by, value, reference=None, scale=1.0, failures=None) -> str:
+    """Mean ± 95% CI (n) per cell; ``failures`` (from ``aggregate_failures``) adds failed runs by reason."""
+    failures = failures or {}
     lines = []
-    for bk in _sort(table):
-        cells = table[bk]
-        row_keys = _sort({rk for rk, _ in cells})
-        col_keys = _sort({ck for _, ck in cells})
+    for bk in _sort(set(table) | set(failures)):
+        cells, failed = table.get(bk, {}), failures.get(bk, {})
+        row_keys = _sort({rk for rk, _ in cells} | {rk for rk, _ in failed})
+        col_keys = _sort({ck for _, ck in cells} | {ck for _, ck in failed})
         title = f"**{_fmt_key(bk)}** -- {value}" if by else f"**{value}**"
         lines += [title, "", "| " + " / ".join(rows) + " | " + " | ".join(_fmt_key(c) for c in col_keys) + " |",
                   "|---" * (len(col_keys) + 1) + "|"]
         for rk in row_keys:
             out = []
             for ck in col_keys:
-                seeds = cells.get((rk, ck), {})
+                seeds, bad = cells.get((rk, ck), {}), failed.get((rk, ck), {})
                 if not seeds:
-                    out.append("")
+                    out.append(f"failed: {_failed_text(bad)}" if bad else "")
                     continue
                 m, h = mean_ci(list(seeds.values()))
                 ci = "" if np.isnan(h) else f" ± {h * scale:.2f}"
-                out.append(f"{m * scale:.2f}{ci} (n={len(seeds)})")
+                extra = f"; failed: {_failed_text(bad)}" if bad else ""
+                out.append(f"{m * scale:.2f}{ci} (n={len(seeds)}{extra})")
             lines.append(f"| {_fmt_key(rk)} | " + " | ".join(out) + " |")
         if reference is not None:
             ref = (reference,) if not isinstance(reference, tuple) else reference
@@ -139,14 +166,20 @@ def scaling_table(results) -> str:
     return "\n".join(lines)
 
 
-def write_csv(table, rows, cols, by, path) -> None:
+def write_csv(table, rows, cols, by, path, failures=None) -> None:
+    """One row per cell: mean, CI half-width, n, per-seed values and failed runs by reason (JSON)."""
+    failures = failures or {}
+    keys = {(bk, cell) for bk, cells in table.items() for cell in cells}
+    keys |= {(bk, cell) for bk, cells in failures.items() for cell in cells}
     with open(path, "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(list(by) + list(rows) + list(cols) + ["mean", "ci95", "n", "seeds"])
-        for bk, cells in table.items():
-            for (rk, ck), seeds in cells.items():
-                m, h = mean_ci(list(seeds.values()))
-                w.writerow(list(bk) + list(rk) + list(ck) + [m, h, len(seeds), json.dumps(seeds)])
+        w.writerow(list(by) + list(rows) + list(cols) + ["mean", "ci95", "n", "seeds", "failed"])
+        for bk, (rk, ck) in sorted(keys, key=lambda k: _order(k[0] + k[1][0] + k[1][1])):
+            seeds = table.get(bk, {}).get((rk, ck), {})
+            m, h = mean_ci(list(seeds.values())) if seeds else (float("nan"), float("nan"))
+            bad = dict(failures.get(bk, {}).get((rk, ck), {}))
+            w.writerow(list(bk) + list(rk) + list(ck) + [m, h, len(seeds), json.dumps(seeds),
+                                                         json.dumps(bad) if bad else ""])
 
 
 def main(argv=None) -> None:

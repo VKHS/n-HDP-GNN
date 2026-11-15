@@ -9,12 +9,19 @@ name: reproduce
 #   * push any commit to a branch named reproduce/<sweep name>, e.g.
 #     git push origin HEAD:reproduce/table1_ablation   (runs configs/table1_ablation.toml)
 #
-# Each job runs 4 sweep shards in parallel (one per vCPU, one thread each).  The
-# number of jobs defaults to one per 20 runs (at most 256).  Results are uploaded
-# as the artifact "results-<sweep name>" and, if publish is true, pushed to the
-# branch results/<sweep name> (one commit containing only the results/ directory).
-# Multi-node scaling (Tables 9-12) and OGB-scale runs need a cluster: see
-# scripts/launch_cluster.sh and docs/REPRODUCING.md.
+# Every job runs its share of the sweep with `nhdp_gnn.sweep --workers 4`: one
+# process per run, four at a time (one per vCPU, one thread each), within a memory
+# budget of 13 GB of the runner's 16 GB.  A run that does not fit next to the others
+# is repeated on its own; a run that needs more than the budget alone, or whose
+# training provably needs more than the time limit, is recorded as failed (memory
+# or time) and reported as such in the tables.  The sweep file's optional [actions]
+# table sets the selection (`only`, e.g. to leave out graphs that need a cluster),
+# `runs_per_job`, `memory_gb` and `run_minutes`.
+#
+# Results are uploaded as the artifact "results-<sweep name>" and, if publish is
+# true, pushed to the branch results/<sweep name> (one commit containing only the
+# results/ directory).  Multi-node scaling (Tables 9-12) and OGB-scale runs need a
+# cluster: see scripts/launch_cluster.sh and docs/REPRODUCING.md.
 
 on:
   workflow_dispatch:
@@ -24,11 +31,11 @@ on:
         required: true
         default: "configs/table1_ablation.toml"
       jobs:
-        description: "parallel jobs, each running 4 shards (empty: one per 20 runs, at most 256)"
+        description: "parallel jobs (empty: from runs_per_job in the sweep's [actions] table, default 16 runs per job)"
         required: false
         default: ""
       only:
-        description: "optional filter, e.g. dataset=cora,seed=0|1|2"
+        description: "optional filter, e.g. dataset=cora,seed=0|1|2 (empty: the sweep's [actions] only)"
         required: false
         default: ""
       set:
@@ -39,6 +46,10 @@ on:
         description: "push results to branch results/<sweep name>"
         type: boolean
         default: true
+      fresh:
+        description: "ignore the results already on branch results/<sweep name> (default: runs recorded there are not repeated)"
+        type: boolean
+        default: false
   push:
     branches: ["reproduce/**"]
 
@@ -54,14 +65,22 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      jobs: ${{ steps.plan.outputs.jobs }}
       name: ${{ steps.plan.outputs.name }}
       config: ${{ steps.plan.outputs.config }}
-      shards: ${{ steps.plan.outputs.shards }}
       only: ${{ steps.plan.outputs.only }}
       set: ${{ steps.plan.outputs.set }}
+      memory_gb: ${{ steps.plan.outputs.memory_gb }}
+      run_minutes: ${{ steps.plan.outputs.run_minutes }}
       publish: ${{ steps.plan.outputs.publish }}
+      fresh: ${{ steps.plan.outputs.fresh }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e .
       - id: plan
         env:
           EVENT: ${{ github.event_name }}
@@ -71,24 +90,30 @@ jobs:
           IN_ONLY: ${{ inputs.only }}
           IN_SET: ${{ inputs.set }}
           IN_PUBLISH: ${{ inputs.publish }}
+          IN_FRESH: ${{ inputs.fresh }}
         run: |
-          python3 - <<'EOF'
+          python - <<'EOF'
           import json, math, os, tomllib
+          from nhdp_gnn.sweep import expand, select
           push = os.environ["EVENT"] == "push"
           config = (f"configs/{os.environ['REF_NAME'].removeprefix('reproduce/')}.toml" if push
                     else os.environ["IN_CONFIG"])
           spec = tomllib.load(open(config, "rb"))
-          n_runs = math.prod(len(v) for v in spec.get("grid", {}).values()) * max(1, len(spec.get("variant", [])))
+          actions = spec.get("actions", {})
+          only = (os.environ.get("IN_ONLY", "") if not push else "") or actions.get("only", "")
+          n_runs = len(select(expand(spec), dict(kv.split("=", 1) for kv in only.split(",") if kv)))
+          per_job = int(actions.get("runs_per_job", 16))
           jobs = os.environ.get("IN_JOBS", "") if not push else ""
-          jobs = max(1, min(256, int(jobs) if jobs.strip() else math.ceil(n_runs / 20)))
-          publish = "true" if push else os.environ.get("IN_PUBLISH", "true")
-          out = {"matrix": json.dumps({"job": list(range(jobs))}), "name": spec["name"], "config": config,
-                 "shards": str(4 * jobs), "only": "" if push else os.environ.get("IN_ONLY", ""),
-                 "set": "" if push else os.environ.get("IN_SET", ""), "publish": publish}
+          jobs = max(1, min(256, int(jobs) if jobs.strip() else math.ceil(n_runs / per_job)))
+          out = {"matrix": json.dumps({"job": list(range(jobs))}), "jobs": str(jobs), "name": spec["name"],
+                 "config": config, "only": only, "set": "" if push else os.environ.get("IN_SET", ""),
+                 "memory_gb": str(actions.get("memory_gb", 13)), "run_minutes": str(actions.get("run_minutes", 150)),
+                 "publish": "true" if push else os.environ.get("IN_PUBLISH", "true"),
+                 "fresh": "false" if push else os.environ.get("IN_FRESH", "false") or "false"}
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               for k, v in out.items():
                   fh.write(f"{k}={v}\n")
-          print(f"{config}: {n_runs} runs, {jobs} jobs x 4 shards")
+          print(f"{config}{' --only ' + only if only else ''}: {n_runs} runs, {jobs} jobs")
           EOF
 
   sweep:
@@ -102,6 +127,10 @@ jobs:
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
+      CONFIG: ${{ needs.plan.outputs.config }}
+      ONLY: ${{ needs.plan.outputs.only }}
+      SET: ${{ needs.plan.outputs.set }}
+      SHARD: ${{ matrix.job }}/${{ needs.plan.outputs.jobs }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -117,35 +146,48 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: data
-          key: datasets-v1-${{ hashFiles('nhdp_gnn/data.py') }}
-          restore-keys: datasets-v1-
-      - name: Run 4 shards
-        env:
-          CONFIG: ${{ needs.plan.outputs.config }}
-          ONLY: ${{ needs.plan.outputs.only }}
-          SET: ${{ needs.plan.outputs.set }}
-          SHARDS: ${{ needs.plan.outputs.shards }}
-          JOB: ${{ matrix.job }}
+          key: datasets-v2-${{ needs.plan.outputs.name }}-${{ hashFiles('nhdp_gnn/data.py') }}
+          restore-keys: |
+            datasets-v2-${{ needs.plan.outputs.name }}-
+            datasets-v1-
+      - name: Datasets
+        continue-on-error: true            # a dataset that fails to load fails its runs, not the others
         run: |
-          args=(--set threads=1)
+          args=()
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          python -m nhdp_gnn.sweep "$CONFIG" --shard "$SHARD" "${args[@]}" --prefetch
+      - name: Earlier results
+        if: needs.plan.outputs.fresh != 'true'
+        env:
+          NAME: ${{ needs.plan.outputs.name }}
+        run: |
+          # a sweep that ran before continues: runs recorded on its results branch are not repeated
+          if git fetch -q --depth 1 origin "results/$NAME" 2>/dev/null; then
+            mkdir -p /tmp/earlier && git archive FETCH_HEAD "results/$NAME" | tar -x -C /tmp/earlier
+            python scripts/unpack_results.py "/tmp/earlier/results/$NAME" previous
+          else
+            echo "no branch results/$NAME: the sweep starts from scratch"
+          fi
+      - name: Runs
+        env:
+          MEMORY_GB: ${{ needs.plan.outputs.memory_gb }}
+          RUN_MINUTES: ${{ needs.plan.outputs.run_minutes }}
+        run: |
+          # without swap, memory pressure ends in the kernel's out-of-memory killer (which picks a run,
+          # handled by the sweep) instead of thrashing until the runner is lost
+          sudo swapoff -a || true
+          free -m
+          args=(--set threads=1 --shard "$SHARD" --workers 4 --memory-gb "$MEMORY_GB" --run-minutes "$RUN_MINUTES"
+                --deadline-minutes 330)
+          [ -n "$ONLY" ] && args+=(--only "$ONLY")
+          [ -d previous ] && args+=(--previous previous)
           for kv in $SET; do args+=(--set "$kv"); done
-          status=0
-          for j in 0 1 2 3; do
-            # stop before the job limit so that finished runs are still uploaded
-            timeout --signal=INT 330m python -m nhdp_gnn.sweep "$CONFIG" --shard $((4 * JOB + j))/"$SHARDS" \
-              "${args[@]}" > "shard-$j.log" 2>&1 &
-          done
-          for j in 0 1 2 3; do wait -n || status=1; done
-          tail -n 3 shard-*.log
-          exit $status
+          python -m nhdp_gnn.sweep "$CONFIG" "${args[@]}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: runs-${{ matrix.job }}
-          path: |
-            runs/
-            shard-*.log
+          path: runs/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -158,12 +200,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - run: pip install -e .
       - uses: actions/download-artifact@v4
         with:
           pattern: runs-*
           path: collected
           merge-multiple: true
+      - name: Earlier results
+        if: needs.plan.outputs.fresh != 'true'
+        env:
+          NAME: ${{ needs.plan.outputs.name }}
+        run: |
+          # a sweep that ran before continues: runs recorded on its results branch are not repeated
+          if git fetch -q --depth 1 origin "results/$NAME" 2>/dev/null; then
+            mkdir -p /tmp/earlier && git archive FETCH_HEAD "results/$NAME" | tar -x -C /tmp/earlier
+            python scripts/unpack_results.py "/tmp/earlier/results/$NAME" previous
+          else
+            echo "no branch results/$NAME: the sweep starts from scratch"
+          fi
       - name: Tables
         env:
           CONFIG: ${{ needs.plan.outputs.config }}
@@ -174,13 +229,15 @@ jobs:
           args=()
           [ -n "$ONLY" ] && args+=(--only "$ONLY")
           for kv in $SET; do args+=(--set "$kv"); done
-          mkdir -p collected/runs
-          python scripts/make_tables.py "$CONFIG" --runs collected/runs --out "results/$NAME" "${args[@]}"
+          mkdir -p collected
+          [ -d previous ] && args+=(--runs previous)          # records of this run take precedence
+          rm -rf "results/$NAME"                              # the copy in the checkout, if any
+          python scripts/make_tables.py "$CONFIG" --runs collected --out "results/$NAME" "${args[@]}"
           cat "results/$NAME/README.md" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: results-${{ needs.plan.outputs.name }}
-          path: results/
+          path: results/${{ needs.plan.outputs.name }}/
           retention-days: 90
       - name: Publish to results branch
         if: needs.plan.outputs.publish == 'true'
@@ -190,11 +247,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          cp -r results /tmp/results
+          cp -r "results/$NAME" /tmp/sweep-results
           git checkout --orphan "results/$NAME"
           git rm -rq --cached .
           git clean -fdxq
-          mkdir -p results && cp -r /tmp/results/. results/
+          rm -rf results && mkdir -p results && cp -r /tmp/sweep-results "results/$NAME"
           git add results
           git commit -qm "Results of $NAME from $GITHUB_SHA ($RUN_URL)"
           git push -f origin "results/$NAME"

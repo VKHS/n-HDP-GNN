@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.1.0
+
+- `nhdp_gnn.sweep --workers N`: every run executes in a process of its own, N at a time, within a
+  memory budget (`--memory-gb`). A run that does not fit next to the others is repeated on its own;
+  a run that needs more than the budget alone, or whose training provably needs more than
+  `--run-minutes`, leaves a failure record (`<key>.failed.json`, reason memory, time or error)
+  instead of a result. Results of runs in their own process include `peak_rss_mb`.
+- `max_train_minutes` (not part of the run key): training stops as soon as early stopping cannot
+  end it within the limit.
+- `scripts/make_tables.py` reports failed runs per cell and by reason, and lists them;
+  `failures.jsonl.gz` holds the records. Tables 2-4 also report seconds per epoch and peak memory.
+- The reproduce workflow uses the worker pool (13 GB of a runner's 16 GB, swap off), reads an
+  optional `[actions]` table from the sweep file (selection, runs per job, memory, time limit) and
+  continues a sweep from its results branch (`scripts/unpack_results.py`) unless started with
+  `fresh`.
+- Table 5 and Fig. 11 run on GitHub-hosted runners for Cora, CiteSeer, PubMed, Photo and
+  ogbn-arxiv; ogbn-products and ogbn-proteins are left to a cluster.
+- The first launch of Tables 2-5 and Fig. 11 (commit 4f00db1) was cancelled. The runners of the
+  jobs that reached an OGB graph, or ran four Graph U-Nets with four or more pooling levels at once,
+  shut down mid-job (most likely out of memory), which discarded the finished runs of those jobs.
+
 ## 2.0.0
 
 The repository now implements the pipeline described in the article.

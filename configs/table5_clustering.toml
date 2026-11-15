@@ -12,6 +12,10 @@ heads = 4
 epochs = 500
 patience = 100
 
+[actions]   # runs on GitHub-hosted runners (.github/workflows/reproduce.yml)
+only = "dataset=cora|citeseer|pubmed|photo|ogbn-arxiv"
+note = "ogbn-products and ogbn-proteins are not part of the runs on GitHub-hosted runners (4 vCPUs and 16 GB of memory per job); run them on a cluster with scripts/launch_cluster.sh."
+
 [grid]
 dataset = ["cora", "citeseer", "pubmed", "photo", "ogbn-arxiv", "ogbn-products", "ogbn-proteins"]
 model = ["nhdp", "gcn", "gat", "sgc", "appnp", "arma", "gcnii", "graphunet"]

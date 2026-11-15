@@ -5,7 +5,10 @@
   "overrides": {},
   "expected": 400,
   "completed": 400,
+  "failed": 0,
+  "failed_by_reason": {},
   "missing": 0,
+  "failed_keys": [],
   "missing_keys": [],
   "code_commits": [
     "4f00db1371643ba63fd5a37ce4d9e24d08bf1f24"

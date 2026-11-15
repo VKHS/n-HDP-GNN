@@ -10,6 +10,10 @@ profiles the hidden layers of models that have them.  With several parts,
 BatchNorm normalises every part with its own statistics in training and in
 evaluation (see ``part_statistics``).
 
+With ``max_train_minutes`` set, training raises ``TimeLimitExceeded`` as soon as it
+provably cannot finish in time: early stopping cannot end training before epoch
+best_epoch + patience, and no later epoch is assumed faster than the fastest so far.
+
     python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/demo
     python -m nhdp_gnn.train --config configs/example.toml --seed 3
 """
@@ -31,7 +35,7 @@ from .losses import supervised_loss
 from .metrics import centroid_gap, kmeans_nmi_ari, madgap
 from .pipeline import build_batches, run_stages
 from .splits import regime_split
-from .utils import code_version, save_json, set_seed
+from .utils import TimeLimitExceeded, cannot_finish, code_version, save_json, set_seed
 
 
 def build_model(cfg: RunConfig, in_dim: int, out_dim: int, aux_classes: int = 0):
@@ -148,7 +152,8 @@ def run(cfg: RunConfig, verbose: bool = True) -> dict:
     y_np, val_mask, test_mask = np.asarray(data.y), split[1], split[2]
     best_val, best_epoch, best_state, curves = -np.inf, 0, None, []
     t_train = time.perf_counter()
-    epoch_times = []
+    epoch_times, fastest_epoch = [], float("inf")         # training only / training + evaluation
+    limit_s = 60.0 * cfg.max_train_minutes
     for epoch in range(1, cfg.epochs + 1):
         model.train()
         t_ep, total = time.perf_counter(), 0.0
@@ -174,6 +179,19 @@ def run(cfg: RunConfig, verbose: bool = True) -> dict:
                 best_state = copy.deepcopy(model.state_dict())
             elif epoch - best_epoch >= cfg.patience:
                 break
+        fastest_epoch = min(fastest_epoch, time.perf_counter() - t_ep)
+        elapsed = time.perf_counter() - t_train
+        if epoch < cfg.epochs and cannot_finish(elapsed, fastest_epoch, epoch, best_epoch, cfg.patience,
+                                                cfg.epochs, limit_s):
+            remaining = min(best_epoch + cfg.patience, cfg.epochs) - epoch
+            raise TimeLimitExceeded(
+                f"stopped after {epoch} epochs ({elapsed / 60:.1f} min): early stopping needs at least "
+                f"{remaining} more epochs at >= {fastest_epoch:.1f} s each, i.e. at least "
+                f"{(elapsed + remaining * fastest_epoch) / 60:.0f} min of training, more than the "
+                f"{cfg.max_train_minutes:g}-minute limit",
+                epochs_run=epoch, train_s=elapsed, fastest_epoch_s=fastest_epoch, min_remaining_epochs=remaining,
+                min_train_s=elapsed + remaining * fastest_epoch, limit_s=limit_s, best_epoch=best_epoch,
+                stages_s=timings["stages_s"])
     timings["train_s"] = time.perf_counter() - t_train
     timings["epoch_s_mean"] = float(np.mean(epoch_times))
 

@@ -23,7 +23,7 @@ used for the article before regenerating its numbers.
 
 Useful options:
 
-* `--dry-run` lists what would run.
+* `--dry-run` lists what would run; `--count` prints the size of the selection.
 * `--only model=nhdp,dataset=cora` filters the grid.
 * `--set key=value` overrides a field for every run.
 * `--shard i/n` runs every n-th configuration. For example, as a SLURM array:
@@ -33,16 +33,44 @@ Useful options:
   python -m nhdp_gnn.sweep configs/table2_full.toml --shard ${SLURM_ARRAY_TASK_ID}/64
   ```
 
+* `--workers N --memory-gb G` runs every configuration in a process of its own, N at a
+  time, and keeps their total memory under G GB (Linux). When the budget is exceeded, the
+  largest run is stopped and repeated later on its own, with the whole budget.
+* `--run-minutes M` stops training as soon as it provably cannot finish within M minutes
+  (early stopping cannot end it before epoch best + patience, and no later epoch is assumed
+  faster than the fastest so far). With `--workers`, a run is also stopped after
+  `--kill-minutes` in total (default 1.5 M + 30).
+* `--deadline-minutes D` stops the whole invocation after D minutes; runs in progress are
+  then not recorded and remain to be run.
+
+A run that fails leaves `runs/<sweep>/<key>.failed.json` with the configuration, the
+reason and the measurements behind it:
+
+| Reason | Meaning |
+|---|---|
+| `memory` | the run needed more than the budget while running alone (or the kernel's out-of-memory killer stopped it while it ran alone) |
+| `time` | training provably needed more than `--run-minutes` (the record gives the epochs run, the fastest epoch and the minimum number of remaining epochs), or the run exceeded `--kill-minutes` |
+| `error` | the run raised an exception (the record holds the traceback) |
+
+Later invocations skip runs that failed for memory or time (`--retry-failed` repeats them,
+e.g. on a machine with more memory) and repeat runs that failed with an error. Results of
+runs that had their own process include `peak_rss_mb`, the peak resident memory of that
+process.
+
 `scripts/make_tables.py CONFIG --out results/<name>` writes a sweep's tables in the
 article's layout (`README.md`), one CSV per reported value, all run results
-(`runs.jsonl.gz`) and the number of expected, completed and missing runs. Cells are
-computed from completed runs only; missing runs are listed, never imputed.
+(`runs.jsonl.gz`), all failure records (`failures.jsonl.gz`) and the number of expected,
+completed, failed and missing runs. Cells are computed from completed runs only; failed runs
+are counted per cell by reason, and failed and missing runs are listed, never imputed.
+`scripts/unpack_results.py results/<name> DIR` turns such a directory back into per-run
+records, which `nhdp_gnn.sweep --previous DIR` and `make_tables.py --runs DIR` read.
 
 ## Running sweeps on GitHub Actions
 
-`.github/workflows/reproduce.yml` runs one sweep on GitHub-hosted CPU runners
-(4 vCPUs each; every job runs four shards with one thread each; by default one
-job per 20 runs, at most 256). Start it from the Actions tab ("Run workflow"), or:
+`.github/workflows/reproduce.yml` runs one sweep on GitHub-hosted CPU runners (4 vCPUs
+and 16 GB of memory each). Every job runs its share of the sweep with
+`nhdp_gnn.sweep --workers 4 --memory-gb 13 --run-minutes 150 --deadline-minutes 330`
+(one thread per run, swap off). Start it from the Actions tab ("Run workflow"), or:
 
 ```bash
 gh workflow run reproduce.yml -f config=configs/table1_ablation.toml
@@ -50,11 +78,25 @@ gh workflow run reproduce.yml -f config=configs/table2_full.toml -f jobs=64 -f o
 git push origin HEAD:reproduce/table2_full      # a push to reproduce/<sweep> runs configs/<sweep>.toml
 ```
 
+An optional `[actions]` table in the sweep file sets the selection and the resources:
+
+```toml
+[actions]
+only = "dataset=cora|citeseer|pubmed|photo|ogbn-arxiv"   # default: the whole grid
+runs_per_job = 16                                       # default 16 (at most 256 jobs)
+memory_gb = 13                                          # default 13
+run_minutes = 150                                       # default 150
+note = "why the selection leaves runs out (printed in the results README)"
+```
+
 The aggregate job writes `results/<name>/` with `scripts/make_tables.py`, shows the
 tables in the run summary, uploads them as an artifact and, with `publish` (default),
-pushes them to the branch `results/<name>`. A job stops after 6 hours; runs it did
-not finish are listed as missing, and re-running the workflow with a narrower
-`only` filter completes them. OGB-scale and multi-node runs need a cluster.
+pushes them to the branch `results/<name>`. Running the workflow again for the same
+sweep continues it: runs recorded on `results/<name>` (completed, or failed for memory
+or time) are not repeated, and the new tables merge both. Start it with `fresh` (or
+delete the branch) to repeat everything, e.g. after a change to the code. Runs that a
+job's deadline stopped are listed as missing and are run by the next invocation.
+OGB-scale and multi-node runs need a cluster.
 
 ## Measured artifacts without training
 

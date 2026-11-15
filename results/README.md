@@ -6,9 +6,10 @@ Each directory holds one sweep from `configs/`, run on GitHub-hosted CPU runners
 
 | File | Content |
 |---|---|
-| `README.md` | the article's table layout: mean ± 95% t-interval over seeds with n per cell, paired two-sided Wilcoxon p-values against the reference row, and the expected, completed and missing runs |
-| `<value>.csv` | one row per cell with the mean, the CI half-width, n and the per-seed values |
-| `runs.jsonl.gz` | every run's result JSON: configuration, validation and test metrics, best epoch, timings, stage A/B diagnostics, embedding diagnostics, code commit |
+| `README.md` | the article's table layout: mean ± 95% t-interval over seeds with n per cell, paired two-sided Wilcoxon p-values against the reference row, failed runs per cell, and the expected, completed, failed and missing runs |
+| `<value>.csv` | one row per cell with the mean, the CI half-width, n, the per-seed values and the failed runs by reason |
+| `runs.jsonl.gz` | every run's result JSON: configuration, validation and test metrics, best epoch, timings, peak memory, stage A/B diagnostics, embedding diagnostics, code commit |
+| `failures.jsonl.gz` | every failure record: configuration, reason (memory, time or error) and the measurements behind it |
 | `summary.json` | counts, the sweep's `[base]` and `[grid]`, and the code commit(s) of the runs |
 
 **Protocol.** The sweeps use the hyper-parameters in `configs/` (hidden 64, learning
@@ -16,15 +17,23 @@ rate 0.005, weight decay 5·10⁻⁴, at most 500 epochs with early stopping aft
 epochs without validation improvement, 10 seeds). These are generic values; where the
 article used other values, its numbers can differ from these.
 
+**Execution.** Table 1 ran in four processes per runner, five runs each in sequence. From
+Tables 2-5 and Fig. 11 on, every run executes in a process of its own, four at a time per
+runner, within a memory budget of 13 GB of the runner's 16 GB (`nhdp_gnn.sweep --workers`).
+A run that does not fit next to the others is repeated on its own. A run that needs more than
+13 GB on its own, or whose training provably needs more than 150 minutes, is reported as
+failed with that reason instead of a value; each table lists its failed runs with the
+measurements behind the decision.
+
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
 | `table2_full` | Tables 2, 6-8 | 2400 | running | |
 | `table3_semi` | Tables 3, 6-8 | 2400 | running | |
 | `table4_scarce` | Tables 4, 6-8 | 2400 | running | |
-| `table5_clustering` | Table 5 | 280 | running | |
-| `fig11_heads` | Fig. 11 | 350 | running | |
-| multi-node scaling, OGB depth runs | Tables 9-12 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
+| `table5_clustering` | Table 5 | 200 of 280 (without ogbn-products and ogbn-proteins) | running | |
+| `fig11_heads` | Fig. 11 | 250 of 350 (without ogbn-products and ogbn-proteins) | running | |
+| multi-node scaling, OGB depth runs, ogbn-products and ogbn-proteins | Tables 5, 9-12, Fig. 11 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
 
 ## Table 1: component ablation (full supervision, depth 2)
 

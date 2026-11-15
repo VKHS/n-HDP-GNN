@@ -1,11 +1,12 @@
 # table1_ablation
 
-Sweep `configs/table1_ablation.toml`: 400 runs expected, 400 completed, 0 missing.
-Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); accuracy in %.
+Sweep `configs/table1_ablation.toml`: 400 runs expected, 400 completed, 0 failed, 0 missing.
+
+Values are mean ± 95% t-interval over seeds; n is the number of completed seeds in the cell.
 
 Code commit(s) of the runs: 4f00db1371643ba63fd5a37ce4d9e24d08bf1f24
 
-## test
+## test (accuracy in %)
 
 **test**
 

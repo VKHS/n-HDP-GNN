@@ -2,7 +2,8 @@
 
 Fields cover the data and protocol, the model, optimisation, stages A/B and
 outputs.  ``key()`` hashes every field that can change a result, so sweeps can
-skip runs whose JSON already exists.
+skip runs whose JSON already exists.  Fields that cannot change a completed
+run's result (paths, threads, device, the time limit) are left out of the key.
 """
 from __future__ import annotations
 
@@ -46,6 +47,7 @@ class RunConfig:
     epochs: int = 500
     patience: int = 100
     eval_every: int = 1
+    max_train_minutes: float = 0.0      # stop when training provably cannot finish in time (0: no limit)
     loss: str = "ce"                    # ce | focal
     focal_gamma: float = 2.0
     class_weights: bool = False
@@ -80,10 +82,11 @@ class RunConfig:
     device: str = "cpu"
     tag: str = ""
 
-    _OUTPUT_ONLY = ("root", "out_dir", "cache_dir", "save_embeddings", "save_curves", "threads", "device", "tag")
+    _NOT_IN_KEY = ("root", "out_dir", "cache_dir", "save_embeddings", "save_curves", "threads", "device", "tag",
+                   "max_train_minutes")
 
     def key(self) -> str:
-        d = {k: v for k, v in asdict(self).items() if k not in self._OUTPUT_ONLY}
+        d = {k: v for k, v in asdict(self).items() if k not in self._NOT_IN_KEY}
         return config_hash(d)
 
     def pipeline(self) -> PipelineConfig:

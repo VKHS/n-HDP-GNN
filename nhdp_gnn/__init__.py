@@ -9,4 +9,4 @@ synthetic) have no PyTorch dependency; the model, training and distributed
 modules require PyTorch and PyTorch Geometric.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
