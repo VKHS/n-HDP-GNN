@@ -13,6 +13,8 @@ evaluation (see ``part_statistics``).
 With ``max_train_minutes`` set, training raises ``TimeLimitExceeded`` as soon as it
 provably cannot finish in time: early stopping cannot end training before epoch
 best_epoch + patience, and no later epoch is assumed faster than the fastest so far.
+If the selected model's outputs are not finite (training diverged), ``run`` raises
+``TrainingDiverged`` instead of reporting metrics computed from them.
 
     python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/demo
     python -m nhdp_gnn.train --config configs/example.toml --seed 3
@@ -35,7 +37,7 @@ from .losses import supervised_loss
 from .metrics import centroid_gap, kmeans_nmi_ari, madgap
 from .pipeline import build_batches, run_stages
 from .splits import regime_split
-from .utils import TimeLimitExceeded, cannot_finish, code_version, save_json, set_seed
+from .utils import TimeLimitExceeded, TrainingDiverged, cannot_finish, code_version, save_json, set_seed
 
 
 def build_model(cfg: RunConfig, in_dim: int, out_dim: int, aux_classes: int = 0):
@@ -199,6 +201,11 @@ def run(cfg: RunConfig, verbose: bool = True) -> dict:
         model.load_state_dict(best_state)
     want_layers = cfg.layer_profile and data.num_nodes <= 200_000 or cfg.save_embeddings
     logits, layers = predict(model, batches, data.num_nodes, all_layers=want_layers)
+    if not np.isfinite(logits).all():
+        bad = int((~np.isfinite(logits)).any(1).sum())
+        raise TrainingDiverged(f"the selected model (epoch {best_epoch}) gives non-finite outputs (NaN or "
+                               f"infinity) for {bad} of {data.num_nodes} nodes", best_epoch=best_epoch,
+                               epochs_run=len(epoch_times), nonfinite_nodes=bad)
     result = {
         "key": cfg.key(), "config": asdict(cfg), "metric": data.metric, **code_version(),
         "val": score(logits, y_np, val_mask, data.multilabel),

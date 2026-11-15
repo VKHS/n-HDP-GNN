@@ -34,6 +34,9 @@ RUNNER = textwrap.dedent('''
         if mode == "slow":
             from nhdp_gnn.utils import TimeLimitExceeded
             raise TimeLimitExceeded("needs 900 min", epochs_run=3, min_train_s=54000.0)
+        if mode == "nan":
+            from nhdp_gnn.utils import TrainingDiverged
+            raise TrainingDiverged("non-finite outputs for 7 of 10 nodes", nonfinite_nodes=7)
         out = Path(cfg.out_dir)
         out.mkdir(parents=True, exist_ok=True)
         (out / f"{cfg.key()}.json").write_text(json.dumps({"key": cfg.key(), "config": {"seed": cfg.seed},
@@ -90,6 +93,7 @@ def test_run_over_the_budget_alone_fails_with_reason_memory(tmp_path, runner):
     ("nomem", "memory", "can't allocate memory"),
     ("sigkill", "memory", "SIGKILL"),
     ("slow", "time", "needs 900 min"),
+    ("nan", "diverged", "non-finite outputs"),
 ])
 def test_failures_are_recorded_with_their_reason(tmp_path, runner, mode, reason, needle):
     todo = cfgs(tmp_path, {"mode": mode}, {})
@@ -140,6 +144,9 @@ def test_command_line_skips_resource_failures_unless_asked(tmp_path, runner, cap
         [[variant]]
         name = "raise"
         synthetic = {{mode = "raise"}}
+        [[variant]]
+        name = "nan"
+        synthetic = {{mode = "nan"}}
     '''))
     argv = [str(tmp_path / "s.toml"), "--workers", "2", "--runner", runner, "--poll", "0.1"]
     with pytest.raises(SystemExit) as e:                # an error failure makes the exit status 1
@@ -147,19 +154,20 @@ def test_command_line_skips_resource_failures_unless_asked(tmp_path, runner, cap
     assert e.value.code == 1
     spec = __import__("tomllib").loads((tmp_path / "s.toml").read_text())
     all_cfgs = sweep.select(sweep.expand(spec))
-    by_tag = {t: [c for c in all_cfgs if c.tag == t] for t in ("ok", "slow", "raise")}
+    by_tag = {t: [c for c in all_cfgs if c.tag == t] for t in ("ok", "slow", "raise", "nan")}
     assert all(sweep.result_path(c).exists() for c in by_tag["ok"])
     assert all(sweep.failure_reason(c) == "time" for c in by_tag["slow"])
     assert all(sweep.failure_reason(c) == "error" for c in by_tag["raise"])
+    assert all(sweep.failure_reason(c) == "diverged" for c in by_tag["nan"])
     # a second invocation repeats the error failures only
     assert {c.tag for c in sweep.pending(all_cfgs)} == {"raise"}
-    assert {c.tag for c in sweep.pending(all_cfgs, retry_failed=True)} == {"slow", "raise"}
+    assert {c.tag for c in sweep.pending(all_cfgs, retry_failed=True)} == {"slow", "raise", "nan"}
     capsys.readouterr()
     sweep.main([str(tmp_path / "s.toml"), "--dry-run"])
     listing = capsys.readouterr().out
-    assert "2 done, 4 failed before, 2 to run" in listing and listing.count(" raise") == 2
+    assert "2 done, 6 failed before, 2 to run" in listing and listing.count(" raise") == 2
     sweep.main([str(tmp_path / "s.toml"), "--count", "--only", "seed=1"])
-    assert capsys.readouterr().out.strip() == "3"
+    assert capsys.readouterr().out.strip() == "4"
 
 
 def test_run_minutes_sets_the_training_limit_outside_the_key(tmp_path):

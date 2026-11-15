@@ -7,6 +7,9 @@
   a run that needs more than the budget alone, or whose training provably needs more than
   `--run-minutes`, leaves a failure record (`<key>.failed.json`, reason memory, time or error)
   instead of a result. Results of runs in their own process include `peak_rss_mb`.
+- A run whose selected model gives non-finite outputs is recorded as failed with reason
+  `diverged` instead of failing later in the embedding diagnostics (Graph U-Net with 10 or 15
+  pooling levels on Cora and CiteSeer).
 - `max_train_minutes` (not part of the run key): training stops as soon as early stopping cannot
   end it within the limit.
 - `scripts/make_tables.py` reports failed runs per cell and by reason, and lists them;

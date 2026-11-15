@@ -50,10 +50,11 @@ reason and the measurements behind it:
 |---|---|
 | `memory` | the run needed more than the budget while running alone (or the kernel's out-of-memory killer stopped it while it ran alone) |
 | `time` | training provably needed more than `--run-minutes` (the record gives the epochs run, the fastest epoch and the minimum number of remaining epochs), or the run exceeded `--kill-minutes` |
+| `diverged` | the selected model gives non-finite outputs (NaN or infinity), so the run has no valid metrics |
 | `error` | the run raised an exception (the record holds the traceback) |
 
-Later invocations skip runs that failed for memory or time (`--retry-failed` repeats them,
-e.g. on a machine with more memory) and repeat runs that failed with an error. Results of
+Later invocations skip runs that failed for memory, time or divergence (`--retry-failed`
+repeats them, e.g. on a machine with more memory) and repeat runs that failed with an error. Results of
 runs that had their own process include `peak_rss_mb`, the peak resident memory of that
 process.
 

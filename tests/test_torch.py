@@ -224,6 +224,24 @@ def test_time_limit_stops_training_that_cannot_finish(tmp_path):
     assert sweep.attempt(small_cfg(tmp_path, epochs=3), train_run) == "ok"
 
 
+def test_non_finite_outputs_are_reported_as_diverged(tmp_path, monkeypatch):
+    from nhdp_gnn import sweep
+    from nhdp_gnn import train as train_mod
+
+    real_predict = train_mod.predict
+
+    def nan_predict(*a, **k):
+        logits, layers = real_predict(*a, **k)
+        logits[:3] = np.nan
+        return logits, layers
+
+    monkeypatch.setattr(train_mod, "predict", nan_predict)
+    cfg = small_cfg(tmp_path, epochs=3)
+    assert sweep.attempt(cfg, train_mod.run) == "diverged"
+    info = json.loads(sweep.failure_path(cfg).read_text())["failure"]
+    assert info["nonfinite_nodes"] == 3 and not sweep.result_path(cfg).exists()
+
+
 def test_cli_parses_types(tmp_path):
     cfg = parse_args(["--dataset", "synthetic", "--depth", "5", "--gate", "false", "--lr", "0.01",
                       "--synthetic", json.dumps(SYN)])

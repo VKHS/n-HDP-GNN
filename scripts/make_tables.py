@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
+import re
 import tomllib
 from collections import Counter
 from pathlib import Path
@@ -48,6 +49,7 @@ UNITS = {"test": "accuracy in %", "timings.epoch_s_mean": "seconds per training 
 REASONS = {
     "memory": "the run needed more memory than the budget while running alone",
     "time": "training provably needed more than the time limit (or the run exceeded the wall-clock limit)",
+    "diverged": "the selected model gave non-finite outputs (NaN or infinity)",
     "error": "the run raised an exception",
 }
 
@@ -57,8 +59,10 @@ def _split(s: str) -> list[str]:
 
 
 def _summary_line(text: str, n: int = 160) -> str:
-    """The last line of a failure detail (for a traceback, the exception)."""
-    line = (text or "").strip().splitlines()[-1] if (text or "").strip() else ""
+    """One line of a failure detail: for a traceback the exception line, otherwise the last line."""
+    lines = [ln.strip() for ln in (text or "").strip().splitlines() if ln.strip()]
+    exc = [ln for ln in lines if re.match(r"^[A-Za-z_][\w.]*(Error|Exception|Exceeded|Diverged)\b", ln)]
+    line = exc[-1] if exc else (lines[-1] if lines else "")
     return (line[:n] + "...") if len(line) > n else line
 
 

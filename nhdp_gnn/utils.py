@@ -98,6 +98,14 @@ class TimeLimitExceeded(RuntimeError):
         self.info = info
 
 
+class TrainingDiverged(RuntimeError):
+    """The selected model gives non-finite outputs; ``info`` holds where."""
+
+    def __init__(self, message: str, **info):
+        super().__init__(message)
+        self.info = info
+
+
 def cannot_finish(elapsed_s: float, fastest_epoch_s: float, epoch: int, best_epoch: int, patience: int,
                   max_epochs: int, limit_s: float) -> bool:
     """True if training provably exceeds ``limit_s``.

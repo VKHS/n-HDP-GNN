@@ -23,10 +23,11 @@ instead of a result, with one of three reasons:
            killed it while it ran alone
   time     training provably needs more than ``--run-minutes`` (see train.py),
            or the whole run exceeded ``--kill-minutes``
+  diverged the selected model gives non-finite outputs (NaN or infinity)
   error    it raised an exception or exited abnormally
 
-Later invocations skip runs that failed for memory or time (``--retry-failed``
-repeats them) and repeat runs that failed with an error; ``--previous DIR`` adds
+Later invocations skip runs that failed for memory, time or divergence
+(``--retry-failed`` repeats them) and repeat runs that failed with an error; ``--previous DIR`` adds
 the records of an earlier campaign (unpacked with scripts/unpack_results.py).
 Without ``--workers`` the runs execute one after the other in this process, with
 the same records.
@@ -48,7 +49,7 @@ from pathlib import Path
 
 from .config import RunConfig, _parse_value, config_from_dict
 
-EXIT = {"ok": 0, "error": 1, "time": 3, "memory": 4}
+EXIT = {"ok": 0, "error": 1, "time": 3, "memory": 4, "diverged": 5}
 DEFAULT_RUNNER = "nhdp_gnn.train:run"
 
 
@@ -143,13 +144,16 @@ def _resolve(runner: str):
 
 def attempt(cfg: RunConfig, fn) -> str:
     """Run one configuration in this process; returns "ok" or the failure reason (and records it)."""
-    from .utils import TimeLimitExceeded
+    from .utils import TimeLimitExceeded, TrainingDiverged
 
     try:
         fn(cfg)
     except TimeLimitExceeded as e:
         write_failure(cfg, "time", str(e), **e.info)
         return "time"
+    except TrainingDiverged as e:
+        write_failure(cfg, "diverged", str(e), **e.info)
+        return "diverged"
     except Exception as e:                               # noqa: BLE001 -- recorded, the sweep goes on
         if _is_allocation_error(e):
             write_failure(cfg, "memory", f"{type(e).__name__}: {e}")
@@ -246,7 +250,7 @@ def run_pool(todo: list[RunConfig], workers: int, memory_gb: float = 0.0, kill_m
     if budget_mb > 0 and not watch:
         print("memory watch needs Linux /proc; running without a memory budget", flush=True)
     queue, solo_queue, running = list(todo), [], {}
-    counts = {"ok": 0, "memory": 0, "time": 0, "error": 0, "repeated alone": 0, "stopped": 0}
+    counts = {"ok": 0, "memory": 0, "time": 0, "diverged": 0, "error": 0, "repeated alone": 0, "stopped": 0}
     stop = []
     old_handlers = {s: signal.signal(s, lambda *_: stop.append(1)) for s in (signal.SIGINT, signal.SIGTERM)}
     t0 = time.monotonic()
@@ -300,7 +304,8 @@ def run_pool(todo: list[RunConfig], workers: int, memory_gb: float = 0.0, kill_m
                     finish(job, "ok")
                 elif rc == EXIT["memory"] and not job.solo:
                     again_alone(job, "allocation failed while sharing the machine")
-                elif rc in (EXIT["error"], EXIT["time"], EXIT["memory"]) and failure_path(job.cfg).exists():
+                elif rc in (EXIT["error"], EXIT["time"], EXIT["memory"], EXIT["diverged"]) and \
+                        failure_path(job.cfg).exists():
                     finish(job, failure_reason(job.cfg) or "error")
                 elif rc == -signal.SIGKILL and not job.solo:
                     again_alone(job, "killed by SIGKILL (the kernel's out-of-memory killer)")
@@ -362,7 +367,7 @@ def pending(cfgs: list[RunConfig], retry_failed: bool = False, previous=()) -> l
     out = []
     for c in cfgs:
         st = state(c, previous)
-        if st == "done" or (st in ("memory", "time") and not retry_failed):
+        if st == "done" or (st in ("memory", "time", "diverged") and not retry_failed):
             continue
         out.append(c)
     return out
@@ -387,7 +392,8 @@ def main(argv=None) -> None:
                          "--run-minutes + 30, none without --run-minutes)")
     ap.add_argument("--deadline-minutes", type=float, default=0.0,
                     help="with --workers: stop everything after this many minutes (runs in progress are not recorded)")
-    ap.add_argument("--retry-failed", action="store_true", help="repeat runs that failed for memory or time")
+    ap.add_argument("--retry-failed", action="store_true",
+                    help="repeat runs that failed for memory, time or divergence")
     ap.add_argument("--previous", action="append", default=[],
                     help="directory of earlier results and failure records (scripts/unpack_results.py): runs "
                          "recorded there count as done or failed")
@@ -445,7 +451,7 @@ def main(argv=None) -> None:
         counts = run_pool(todo, args.workers, memory_gb, kill, args.deadline_minutes, args.runner, args.poll)
     else:
         fn = _resolve(args.runner)
-        counts = {"ok": 0, "memory": 0, "time": 0, "error": 0}
+        counts = {"ok": 0, "memory": 0, "time": 0, "diverged": 0, "error": 0}
         for k, cfg in enumerate(todo, 1):
             print(f"--- [{k}/{len(todo)}] {cfg.key()}  {_describe(cfg)}", flush=True)
             outcome = attempt(cfg, fn)
