@@ -51,7 +51,7 @@ through means over seeds, as the tables do.
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
-| [`table2_full`](table2_full/README.md) | Tables 2, 6-8 | 2248 / 2400 completed, 152 failed (87 memory, 25 time, 40 error) | complete; the 40 errors (Graph U-Net with NaN outputs) are being re-run to record them as diverged | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781), continuing [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273) |
+| [`table2_full`](table2_full/README.md) | Tables 2, 6-8 | 2248 / 2400 completed, 152 failed (87 memory, 25 time, 40 diverged) | complete | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781), continuing [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273); the 40 diverged runs re-run in [43731956974](https://github.com/VKHS/n-HDP-GNN/actions/runs/43731956974) |
 | `table3_semi` | Tables 3, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table3_semi/results/table3_semi)) | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352) |
 | `table4_scarce` | Tables 4, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table4_scarce/results/table4_scarce)) | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785) |
 | [`table5_clustering`](table5_clustering/README.md) | Table 5 | 190 / 200 completed, 10 failed (memory); without ogbn-products and ogbn-proteins | complete | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
@@ -178,8 +178,11 @@ memory. With 10 seeds the smallest possible p-value is 0.002.
 * SGC underfits under the shared protocol here too (Cora 46.41, Photo 44.09 at depth 2).
 * Graph U-Net exceeded 13 GB on Photo at every depth and on PubMed from depth 4 (or needed more
   than 150 minutes); with 10 and 15 pooling levels (depth 20 and 30) it gives NaN outputs on Cora
-  and CiteSeer. Those 40 runs ended in an exception in the diagnostics and are recorded as errors;
-  the current code records such runs as diverged, and they are being re-run to label them so.
+  and CiteSeer: the model selected on validation accuracy (epoch 1; 101 epochs were run) gives
+  non-finite outputs for every node (2708 of 2708 on Cora, 3327 of 3327 on CiteSeer). These 40
+  runs have no accuracy and are listed as `diverged` in `failures.jsonl.gz`, not as results. Earlier
+  code had recorded them as errors; the current code records them as diverged, and they were re-run
+  with it.
 * Cost at depth 30 (one thread, four runs per 4-vCPU runner): n-HDP-GNN takes 0.70, 0.93, 4.0 and
   9.2 s per epoch on Cora, CiteSeer, PubMed and Photo, about as much as GAT (0.51, 0.76, 3.6, 9.2)
   and more than GCN (0.32, 0.60, 3.2, 5.4) and APPNP (0.13, 0.35, 0.45, 0.74); SGC recomputes its

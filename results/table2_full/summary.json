@@ -7,7 +7,7 @@
   "completed": 2248,
   "failed": 152,
   "failed_by_reason": {
-    "error": 40,
+    "diverged": 40,
     "memory": 87,
     "time": 25
   },
@@ -168,6 +168,7 @@
   ],
   "missing_keys": [],
   "code_commits": [
+    "0609f3d9721433708b98b9255a9b56025e9abfb3",
     "0f7045972e60a86d7966841bc3e5c4bfe0caa016",
     "20d9d0fac98f9a83bb60e54bf36ddf1c98869b65",
     "4f00db1371643ba63fd5a37ce4d9e24d08bf1f24"
