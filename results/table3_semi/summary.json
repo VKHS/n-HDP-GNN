@@ -7,8 +7,7 @@
   "completed": 2241,
   "failed": 159,
   "failed_by_reason": {
-    "diverged": 20,
-    "error": 20,
+    "diverged": 40,
     "memory": 88,
     "time": 31
   },
