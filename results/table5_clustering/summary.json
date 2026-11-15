@@ -1,0 +1,68 @@
+{
+  "sweep": "configs/table5_clustering.toml",
+  "name": "table5_clustering",
+  "only": {
+    "dataset": "cora|citeseer|pubmed|photo|ogbn-arxiv"
+  },
+  "overrides": {},
+  "expected": 200,
+  "completed": 190,
+  "failed": 10,
+  "failed_by_reason": {
+    "memory": 10
+  },
+  "missing": 0,
+  "failed_keys": [
+    "072148959da0",
+    "1f7c1ef65992",
+    "5a8ab3954935",
+    "76db8ef128e9",
+    "7c763923d92a",
+    "afdb331e541a",
+    "cbe73d7635b4",
+    "cf2bc1238537",
+    "d04acbdcf3ae",
+    "ed3c73db5cc1"
+  ],
+  "missing_keys": [],
+  "code_commits": [
+    "20d9d0fac98f9a83bb60e54bf36ddf1c98869b65",
+    "4f00db1371643ba63fd5a37ce4d9e24d08bf1f24"
+  ],
+  "base": {
+    "regime": "full",
+    "depth": 2,
+    "hidden": 64,
+    "heads": 4,
+    "epochs": 500,
+    "patience": 100
+  },
+  "grid": {
+    "dataset": [
+      "cora",
+      "citeseer",
+      "pubmed",
+      "photo",
+      "ogbn-arxiv",
+      "ogbn-products",
+      "ogbn-proteins"
+    ],
+    "model": [
+      "nhdp",
+      "gcn",
+      "gat",
+      "sgc",
+      "appnp",
+      "arma",
+      "gcnii",
+      "graphunet"
+    ],
+    "seed": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}
