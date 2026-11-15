@@ -37,7 +37,8 @@ from .losses import supervised_loss
 from .metrics import centroid_gap, kmeans_nmi_ari, madgap
 from .pipeline import build_batches, run_stages
 from .splits import regime_split
-from .utils import TimeLimitExceeded, TrainingDiverged, cannot_finish, code_version, save_json, set_seed
+from .utils import (TimeLimitExceeded, TrainingDiverged, cannot_finish, code_version, environment, save_json,
+                    set_seed)
 
 
 def build_model(cfg: RunConfig, in_dim: int, out_dim: int, aux_classes: int = 0):
@@ -208,6 +209,7 @@ def run(cfg: RunConfig, verbose: bool = True) -> dict:
                                epochs_run=len(epoch_times), nonfinite_nodes=bad)
     result = {
         "key": cfg.key(), "config": asdict(cfg), "metric": data.metric, **code_version(),
+        "environment": environment(),
         "val": score(logits, y_np, val_mask, data.multilabel),
         "test": score(logits, y_np, test_mask, data.multilabel),
         "best_epoch": best_epoch, "epochs_run": len(epoch_times),

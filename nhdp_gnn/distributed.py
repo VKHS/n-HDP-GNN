@@ -50,7 +50,7 @@ from .losses import supervised_loss
 from .pipeline import build_batches, compute_partition, run_stages
 from .splits import regime_split
 from .train import build_model, class_weights, has_batchnorm, part_statistics, score
-from .utils import code_version, save_json, set_seed
+from .utils import code_version, environment, save_json, set_seed
 
 
 class CommStats:
@@ -204,7 +204,7 @@ def worker(cfg: RunConfig) -> dict | None:
         return None
     result = {
         "key": cfg.key() + f"-ddp{world}", "config": asdict(cfg), "metric": data.metric, "world_size": world,
-        **code_version(),
+        **code_version(), "environment": environment(),
         "val": val, "test": test, "best_epoch": best_epoch, "epochs_run": len(step_times),
         "propagation_depth": int(getattr(model, "propagation_depth", cfg.depth)),
         "n_params": int(sum(p.numel() for p in model.parameters() if p.requires_grad)),

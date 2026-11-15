@@ -35,6 +35,50 @@ def code_version() -> dict:
             "code_dirty": None if status is None else bool(status)}
 
 
+_SIMD_FLAGS = frozenset({"sse4_2", "avx", "avx2", "fma", "avx512f", "avx512dq", "avx512bw", "avx512vl",
+                         "avx512_vnni", "avx512_bf16", "amx_tile", "amx_bf16"})
+_ENV_VARS = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_CORETYPE", "MKL_CBWR",
+             "ATEN_CPU_CAPABILITY", "NPY_DISABLE_CPU_FEATURES")
+_PACKAGES = ("numpy", "scipy", "scikit-learn", "networkx", "torch", "torch_geometric")
+_CPUINFO = "/proc/cpuinfo"
+
+
+@functools.lru_cache(maxsize=1)
+def environment() -> dict:
+    """The software and hardware that decide the last bits of a run's floating-point results.
+
+    Stored with every run.  BLAS and PyTorch pick their kernels by CPU model and instruction
+    set, so two executions agree bit for bit only on matching environments.  Hostnames and
+    other identifying values are not recorded.
+    """
+    import platform
+    import sys
+    from importlib import metadata
+
+    def version(name):
+        try:
+            return metadata.version(name)
+        except metadata.PackageNotFoundError:
+            return None
+
+    model, simd = None, []
+    try:
+        with open(_CPUINFO) as fh:
+            for line in fh:
+                key, _, value = line.partition(":")
+                if model is None and key.strip() == "model name":
+                    model = value.strip()
+                elif key.strip() == "flags":
+                    simd = sorted(_SIMD_FLAGS.intersection(value.split()))
+                    break
+    except OSError:
+        pass
+    return {"python": sys.version.split()[0], "platform": platform.platform(),
+            "cpu_model": model or platform.processor() or None, "cpu_simd": simd, "cpu_count": os.cpu_count(),
+            "packages": {name: version(name) for name in _PACKAGES},
+            "variables": {name: os.environ[name] for name in _ENV_VARS if name in os.environ}}
+
+
 def set_seed(seed: int) -> None:
     """Seed python, numpy and (if installed) torch."""
     random.seed(seed)

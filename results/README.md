@@ -8,7 +8,7 @@ Each directory holds one sweep from `configs/`, run on GitHub-hosted CPU runners
 |---|---|
 | `README.md` | the article's table layout: mean ± 95% t-interval over seeds with n per cell, paired two-sided Wilcoxon p-values against the reference row, failed runs per cell, and the expected, completed, failed and missing runs |
 | `<value>.csv` | one row per cell with the mean, the CI half-width, n, the per-seed values and the failed runs by reason |
-| `runs.jsonl.gz` | every run's result JSON: configuration, validation and test metrics, best epoch, timings, peak memory, stage A/B diagnostics, embedding diagnostics, code commit |
+| `runs.jsonl.gz` | every run's result JSON: configuration, validation and test metrics, best epoch, timings, peak memory, stage A/B diagnostics, embedding diagnostics, code commit and, in later runs, the environment (CPU model and instruction sets, library versions, thread and BLAS variables) |
 | `failures.jsonl.gz` | every failure record: configuration, reason (memory, time, diverged or error) and the measurements behind it |
 | `summary.json` | counts, the sweep's `[base]` and `[grid]`, and the code commit(s) of the runs |
 
@@ -34,7 +34,19 @@ not always bit-identical between processes, also at the same commit. Of the 155 
 that Tables 2 and 5 share, 126 gave the same test accuracy. The 29 that differ are 13 of 20 for
 n-HDP-GNN (largest difference 3.47 points), 7 of 20 for GCNII (0.53), 4 of 20 for GAT (0.20),
 2 of 15 for Graph U-Net (0.10), 2 of 20 for APPNP (0.08) and 1 of 20 for ARMA (0.03); GCN and
-SGC gave the same test accuracy in all 20. The cause has not been identified.
+SGC gave the same test accuracy in all 20.
+
+For n-HDP-GNN the trace of the Stage-B objective (double precision, numpy) separates the two cases:
+in all 13 pairs whose test accuracy differs, the trace differs too (from iteration 0 or 2 on; the
+largest relative difference along a trace is between 6·10⁻¹⁶ and 9·10⁻¹⁴, and both executions need
+the same number of iterations), and in all 7 pairs with the same test accuracy the traces are
+identical. The two executions of a differing pair
+therefore differ in their floating-point arithmetic, which shows in Stage B and, in the same pairs,
+in the trained model. What differs between the executions is not known: these runs do not record
+their CPU or library versions. A different CPU model, which selects other BLAS and PyTorch kernels,
+is a candidate that has not been tested. Later runs record their `environment` (CPU model and
+instruction sets, library versions, thread and BLAS variables). Single runs should be compared
+through means over seeds, as the tables do.
 
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|

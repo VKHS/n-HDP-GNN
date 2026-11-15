@@ -118,6 +118,11 @@ draws the figures and `artifacts/SUMMARY.md`. See [artifacts/README.md](../artif
   * Validation and test nodes are those of the full regime for the same seed, except under the public Planetoid split.
 * **Model selection**: early stopping on the validation metric. The selected state is restored before the single test evaluation.
 * **Statistics**: mean ± 95% t-interval over seeds. `--reference` adds paired two-sided Wilcoxon p-values against the reference row.
+* **Repeated runs**: two executions of the same configuration and seed are not always bit-identical
+  (the measured cases are in [results/README.md](../results/README.md)): the floating-point results of
+  the n-HDP stage differ in the last bits between some executions, and the trained models differ with
+  them. Each run records its `environment` (CPU model and instruction sets, library versions, thread
+  and BLAS variables) so that such differences can be traced; compare means over seeds, not single runs.
 * **Same partition for every method** in multi-part and distributed runs: the partition depends only on the data, the method and the seed.
 * **Depth** is the number of propagation steps; each JSON records it as `propagation_depth`. Graph U-Net maps depth L to max(1, ⌊L/2⌋) pooling levels, i.e. 2·levels + 1 GCN layers, so every depth row is a different network.
 * **Embedding diagnostics** (Tables 5-8: centroid gap, MADGap, k-means NMI/ARI) are computed on the logits, the one representation every model has. `embedding.centroid_gap_per_layer` profiles the hidden layers of the models that have a layer-wise hidden stack (n-HDP-GNN, GCN, GAT, ARMA, GCNII, PairNorm, DropEdge).

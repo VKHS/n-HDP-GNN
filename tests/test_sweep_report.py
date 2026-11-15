@@ -81,6 +81,27 @@ def test_code_version_names_the_checked_out_commit():
         assert v["code_commit"] == head and isinstance(v["code_dirty"], bool)
 
 
+def test_environment_reads_the_cpu_model_and_instruction_sets(tmp_path, monkeypatch):
+    import json
+    import sys
+
+    from nhdp_gnn import utils
+
+    cpuinfo = tmp_path / "cpuinfo"
+    cpuinfo.write_text("processor\t: 0\nmodel name\t: Test CPU @ 3.0GHz\n"
+                       "flags\t\t: fpu sse2 sse4_2 avx avx2 fma avx512f x\n\n"
+                       "processor\t: 1\nmodel name\t: Other\nflags\t\t: fpu\n")
+    monkeypatch.setattr(utils, "_CPUINFO", str(cpuinfo))
+    monkeypatch.setenv("OPENBLAS_CORETYPE", "HASWELL")
+    env = utils.environment.__wrapped__()
+    assert env["cpu_model"] == "Test CPU @ 3.0GHz" and env["cpu_simd"] == ["avx", "avx2", "avx512f", "fma", "sse4_2"]
+    assert env["variables"]["OPENBLAS_CORETYPE"] == "HASWELL" and env["cpu_count"] >= 1
+    assert env["python"].startswith(f"{sys.version_info.major}.") and env["packages"]["numpy"]
+    assert json.loads(json.dumps(env)) == env
+    monkeypatch.setattr(utils, "_CPUINFO", str(tmp_path / "missing"))        # no /proc/cpuinfo: no CPU details
+    assert utils.environment.__wrapped__()["cpu_simd"] == []
+
+
 def _make_tables():
     import importlib.util
     from pathlib import Path
