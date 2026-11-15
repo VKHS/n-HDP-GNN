@@ -1,18 +1,236 @@
 # table4_scarce
 
-Sweep `configs/table4_scarce.toml`: 2400 runs expected, 0 completed, 2400 missing.
-Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); accuracy in %.
+Sweep `configs/table4_scarce.toml`: 2400 runs expected, 16 completed, 0 failed, 2384 missing.
 
-## test
+Values are mean ± 95% t-interval over seeds; n is the number of completed seeds in the cell.
 
+Code commit(s) of the runs: 0f7045972e60a86d7966841bc3e5c4bfe0caa016
+
+## test (accuracy in %)
+
+**citeseer** -- test
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 71.39 (n=1) |  |
+| gat |  | 64.91 (n=1) |
+| nhdp | 62.35 (n=1) |  |
+| pairnorm |  | 44.88 (n=1) |
+
+Wilcoxon p-value vs nhdp (paired by seed)
+
+| model | 2 | 10 |
+|---|---|---|
+| arma |  |  |
+| gat |  |  |
+| pairnorm |  |  |
+
+**cora** -- test
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 82.04 (n=1) |  |
+| gat |  | 77.04 (n=1) |
+| nhdp | 70.00 (n=1) |  |
+| pairnorm |  | 57.04 (n=1) |
+
+Wilcoxon p-value vs nhdp (paired by seed)
+
+| model | 2 | 10 |
+|---|---|---|
+| arma |  |  |
+| gat |  |  |
+| pairnorm |  |  |
+
+**photo** -- test
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 92.61 (n=1) |  |
+| gat |  | 86.79 (n=1) |
+| nhdp | 82.01 (n=1) |  |
+| pairnorm |  | 89.14 (n=1) |
+
+Wilcoxon p-value vs nhdp (paired by seed)
+
+| model | 2 | 10 |
+|---|---|---|
+| arma |  |  |
+| gat |  |  |
+| pairnorm |  |  |
+
+**pubmed** -- test
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 85.09 (n=1) |  |
+| gat |  | 82.60 (n=1) |
+| nhdp | 82.15 (n=1) |  |
+| pairnorm |  | 82.75 (n=1) |
+
+Wilcoxon p-value vs nhdp (paired by seed)
+
+| model | 2 | 10 |
+|---|---|---|
+| arma |  |  |
+| gat |  |  |
+| pairnorm |  |  |
 
 ## embedding.centroid_gap
 
+**citeseer** -- embedding.centroid_gap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.40 (n=1) |  |
+| gat |  | 0.60 (n=1) |
+| nhdp | 0.73 (n=1) |  |
+| pairnorm |  | -0.04 (n=1) |
+
+**cora** -- embedding.centroid_gap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.58 (n=1) |  |
+| gat |  | 0.93 (n=1) |
+| nhdp | 0.78 (n=1) |  |
+| pairnorm |  | 0.26 (n=1) |
+
+**photo** -- embedding.centroid_gap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.88 (n=1) |  |
+| gat |  | 0.73 (n=1) |
+| nhdp | 0.49 (n=1) |  |
+| pairnorm |  | 0.61 (n=1) |
+
+**pubmed** -- embedding.centroid_gap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 1.21 (n=1) |  |
+| gat |  | 1.18 (n=1) |
+| nhdp | 1.14 (n=1) |  |
+| pairnorm |  | 1.19 (n=1) |
 
 ## embedding.madgap
 
+**citeseer** -- embedding.madgap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.62 (n=1) |  |
+| gat |  | 0.87 (n=1) |
+| nhdp | 0.64 (n=1) |  |
+| pairnorm |  | 0.55 (n=1) |
+
+**cora** -- embedding.madgap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.47 (n=1) |  |
+| gat |  | 0.67 (n=1) |
+| nhdp | 0.48 (n=1) |  |
+| pairnorm |  | 0.46 (n=1) |
+
+**photo** -- embedding.madgap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.25 (n=1) |  |
+| gat |  | 0.53 (n=1) |
+| nhdp | 0.13 (n=1) |  |
+| pairnorm |  | 0.27 (n=1) |
+
+**pubmed** -- embedding.madgap
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.85 (n=1) |  |
+| gat |  | 0.98 (n=1) |
+| nhdp | 0.66 (n=1) |  |
+| pairnorm |  | 0.87 (n=1) |
+
+## timings.epoch_s_mean (seconds per training epoch (one thread))
+
+**citeseer** -- timings.epoch_s_mean
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.55 (n=1) |  |
+| gat |  | 0.38 (n=1) |
+| nhdp | 0.31 (n=1) |  |
+| pairnorm |  | 0.35 (n=1) |
+
+**cora** -- timings.epoch_s_mean
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.17 (n=1) |  |
+| gat |  | 0.19 (n=1) |
+| nhdp | 0.11 (n=1) |  |
+| pairnorm |  | 0.15 (n=1) |
+
+**photo** -- timings.epoch_s_mean
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.46 (n=1) |  |
+| gat |  | 1.94 (n=1) |
+| nhdp | 0.68 (n=1) |  |
+| pairnorm |  | 1.38 (n=1) |
+
+**pubmed** -- timings.epoch_s_mean
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 0.57 (n=1) |  |
+| gat |  | 1.25 (n=1) |
+| nhdp | 0.53 (n=1) |  |
+| pairnorm |  | 1.15 (n=1) |
+
+## peak_rss_mb (peak resident memory of the run's process in MB)
+
+**citeseer** -- peak_rss_mb
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 803.94 (n=1) |  |
+| gat |  | 863.53 (n=1) |
+| nhdp | 822.32 (n=1) |  |
+| pairnorm |  | 810.68 (n=1) |
+
+**cora** -- peak_rss_mb
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 673.07 (n=1) |  |
+| gat |  | 732.26 (n=1) |
+| nhdp | 669.82 (n=1) |  |
+| pairnorm |  | 667.15 (n=1) |
+
+**photo** -- peak_rss_mb
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 842.99 (n=1) |  |
+| gat |  | 1863.98 (n=1) |
+| nhdp | 1110.32 (n=1) |  |
+| pairnorm |  | 957.64 (n=1) |
+
+**pubmed** -- peak_rss_mb
+
+| model | 2 | 10 |
+|---|---|---|
+| arma | 1011.54 (n=1) |  |
+| gat |  | 1613.28 (n=1) |
+| nhdp | 1152.38 (n=1) |  |
+| pairnorm |  | 1205.39 (n=1) |
 
 ## Missing runs
+
+Not attempted, or stopped by the job's deadline.
 
 | key | dataset | model | tag | depth | seed |
 |---|---|---|---|---|---|
@@ -20,7 +238,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 1ac99bd9a350 | cora | nhdp |  | 2 | 1 |
 | bc34e5a80905 | cora | nhdp |  | 2 | 2 |
 | 9951edbfdfb3 | cora | nhdp |  | 2 | 3 |
-| 3449ba712da6 | cora | nhdp |  | 2 | 4 |
 | 83d31285a5a6 | cora | nhdp |  | 2 | 5 |
 | 988cca5840d2 | cora | nhdp |  | 2 | 6 |
 | 62d3bd26eb91 | cora | nhdp |  | 2 | 7 |
@@ -170,7 +387,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 6b9a28cc8067 | cora | gat |  | 10 | 1 |
 | 801ac880023f | cora | gat |  | 10 | 2 |
 | 34738e07bbf9 | cora | gat |  | 10 | 3 |
-| 69ca267a7b88 | cora | gat |  | 10 | 4 |
 | 7e47866cdbfa | cora | gat |  | 10 | 5 |
 | 1325a56d8864 | cora | gat |  | 10 | 6 |
 | 4ca0cb0187c0 | cora | gat |  | 10 | 7 |
@@ -320,7 +536,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 323675ae1f0c | cora | arma |  | 2 | 1 |
 | 5555ec9c9d41 | cora | arma |  | 2 | 2 |
 | a853814b42c2 | cora | arma |  | 2 | 3 |
-| 6e88b3bde6ba | cora | arma |  | 2 | 4 |
 | 683144b25c1f | cora | arma |  | 2 | 5 |
 | 4a72141dbd54 | cora | arma |  | 2 | 6 |
 | 3525c6f695ba | cora | arma |  | 2 | 7 |
@@ -470,7 +685,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 99ef1cb80b4c | cora | pairnorm |  | 10 | 1 |
 | 26a33f0dae02 | cora | pairnorm |  | 10 | 2 |
 | b67464f09821 | cora | pairnorm |  | 10 | 3 |
-| c3ee69f749d1 | cora | pairnorm |  | 10 | 4 |
 | cf2a54de34cf | cora | pairnorm |  | 10 | 5 |
 | a09d3b06d4e7 | cora | pairnorm |  | 10 | 6 |
 | 7d851a6594d5 | cora | pairnorm |  | 10 | 7 |
@@ -620,7 +834,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 0326adf48bac | citeseer | nhdp |  | 2 | 1 |
 | 0a2f52eeda3d | citeseer | nhdp |  | 2 | 2 |
 | 6f63de07d605 | citeseer | nhdp |  | 2 | 3 |
-| 512f83554188 | citeseer | nhdp |  | 2 | 4 |
 | 57be86251318 | citeseer | nhdp |  | 2 | 5 |
 | ae8e966b34ab | citeseer | nhdp |  | 2 | 6 |
 | d2fa84e2b6fc | citeseer | nhdp |  | 2 | 7 |
@@ -770,7 +983,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | ccba3ce20886 | citeseer | gat |  | 10 | 1 |
 | c62766a8f6e1 | citeseer | gat |  | 10 | 2 |
 | f5d11572fba9 | citeseer | gat |  | 10 | 3 |
-| 21647ddf8b3a | citeseer | gat |  | 10 | 4 |
 | b578e8a3a089 | citeseer | gat |  | 10 | 5 |
 | fda8834b52fb | citeseer | gat |  | 10 | 6 |
 | 94842d3dc061 | citeseer | gat |  | 10 | 7 |
@@ -920,7 +1132,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | e87456e8bbaa | citeseer | arma |  | 2 | 1 |
 | 044e5fd08c1f | citeseer | arma |  | 2 | 2 |
 | 2104f1c14ab3 | citeseer | arma |  | 2 | 3 |
-| b77493f10304 | citeseer | arma |  | 2 | 4 |
 | 6983c26caebe | citeseer | arma |  | 2 | 5 |
 | f33261ec0dfd | citeseer | arma |  | 2 | 6 |
 | bf8ed4975839 | citeseer | arma |  | 2 | 7 |
@@ -1070,7 +1281,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | bb38354b9045 | citeseer | pairnorm |  | 10 | 1 |
 | eb111334daf0 | citeseer | pairnorm |  | 10 | 2 |
 | e6118064111d | citeseer | pairnorm |  | 10 | 3 |
-| 9dd8a0868deb | citeseer | pairnorm |  | 10 | 4 |
 | 7398a10d6aa9 | citeseer | pairnorm |  | 10 | 5 |
 | bebb1e7c157a | citeseer | pairnorm |  | 10 | 6 |
 | f3192f6d9b19 | citeseer | pairnorm |  | 10 | 7 |
@@ -1220,7 +1430,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | f01b98a48a74 | pubmed | nhdp |  | 2 | 1 |
 | 1c9de8b2a1eb | pubmed | nhdp |  | 2 | 2 |
 | e187016e4fe9 | pubmed | nhdp |  | 2 | 3 |
-| ba4efa98d2e3 | pubmed | nhdp |  | 2 | 4 |
 | 9a52be8b02da | pubmed | nhdp |  | 2 | 5 |
 | 637407cb8964 | pubmed | nhdp |  | 2 | 6 |
 | 24b4ee68c52d | pubmed | nhdp |  | 2 | 7 |
@@ -1370,7 +1579,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 3825acd90729 | pubmed | gat |  | 10 | 1 |
 | fc65c498c999 | pubmed | gat |  | 10 | 2 |
 | 655138029f19 | pubmed | gat |  | 10 | 3 |
-| 168bf98d632d | pubmed | gat |  | 10 | 4 |
 | 5177e52c47b5 | pubmed | gat |  | 10 | 5 |
 | 622a9a503b7f | pubmed | gat |  | 10 | 6 |
 | 350676b425ab | pubmed | gat |  | 10 | 7 |
@@ -1520,7 +1728,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | d3adcb80927e | pubmed | arma |  | 2 | 1 |
 | 55e24dd9c110 | pubmed | arma |  | 2 | 2 |
 | 4f3045cc15e5 | pubmed | arma |  | 2 | 3 |
-| fb21fa7f1f3b | pubmed | arma |  | 2 | 4 |
 | 5315fcacfdd1 | pubmed | arma |  | 2 | 5 |
 | 7b02eca05aef | pubmed | arma |  | 2 | 6 |
 | 8b956fba7488 | pubmed | arma |  | 2 | 7 |
@@ -1670,7 +1877,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | eb227bdc9873 | pubmed | pairnorm |  | 10 | 1 |
 | c6dcaa32ea56 | pubmed | pairnorm |  | 10 | 2 |
 | 20cc281d19e1 | pubmed | pairnorm |  | 10 | 3 |
-| cfd17f1ad9f8 | pubmed | pairnorm |  | 10 | 4 |
 | b59419b8f103 | pubmed | pairnorm |  | 10 | 5 |
 | 6a5bf02b4ef1 | pubmed | pairnorm |  | 10 | 6 |
 | 5b3933d02c80 | pubmed | pairnorm |  | 10 | 7 |
@@ -1820,7 +2026,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | c877718911b1 | photo | nhdp |  | 2 | 1 |
 | 31e2fd8d180e | photo | nhdp |  | 2 | 2 |
 | f327e682c307 | photo | nhdp |  | 2 | 3 |
-| 6ba91113b224 | photo | nhdp |  | 2 | 4 |
 | 39cbc06ced20 | photo | nhdp |  | 2 | 5 |
 | 893f9534e714 | photo | nhdp |  | 2 | 6 |
 | 4a0e1903e24d | photo | nhdp |  | 2 | 7 |
@@ -1970,7 +2175,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 0e04ec756eca | photo | gat |  | 10 | 1 |
 | f9f5e8b790ac | photo | gat |  | 10 | 2 |
 | 374299e79659 | photo | gat |  | 10 | 3 |
-| 32993afd0a9b | photo | gat |  | 10 | 4 |
 | ca0125149d7c | photo | gat |  | 10 | 5 |
 | b720393826e3 | photo | gat |  | 10 | 6 |
 | 60c7b70cd5ce | photo | gat |  | 10 | 7 |
@@ -2120,7 +2324,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | e8f82a9fe3d0 | photo | arma |  | 2 | 1 |
 | b4f938269852 | photo | arma |  | 2 | 2 |
 | fa3798294c1f | photo | arma |  | 2 | 3 |
-| 7914388a37c8 | photo | arma |  | 2 | 4 |
 | 87d3d1317bb0 | photo | arma |  | 2 | 5 |
 | 6f1d4dae2d48 | photo | arma |  | 2 | 6 |
 | e493bacb622a | photo | arma |  | 2 | 7 |
@@ -2270,7 +2473,6 @@ Values are mean ± 95% t-interval over seeds (n = completed seeds per cell); acc
 | 302b1ddc97e5 | photo | pairnorm |  | 10 | 1 |
 | 751fa89ba843 | photo | pairnorm |  | 10 | 2 |
 | 9de8db89363b | photo | pairnorm |  | 10 | 3 |
-| 51dd9ff08b1c | photo | pairnorm |  | 10 | 4 |
 | ccfd4acfb45d | photo | pairnorm |  | 10 | 5 |
 | e623ab889abd | photo | pairnorm |  | 10 | 6 |
 | 2768c75e5ae8 | photo | pairnorm |  | 10 | 7 |
