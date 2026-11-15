@@ -38,18 +38,42 @@ def code_version() -> dict:
 _SIMD_FLAGS = frozenset({"sse4_2", "avx", "avx2", "fma", "avx512f", "avx512dq", "avx512bw", "avx512vl",
                          "avx512_vnni", "avx512_bf16", "amx_tile", "amx_bf16"})
 _ENV_VARS = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_CORETYPE", "MKL_CBWR",
-             "ATEN_CPU_CAPABILITY", "NPY_DISABLE_CPU_FEATURES")
+             "ATEN_CPU_CAPABILITY", "ONEDNN_MAX_CPU_ISA", "NPY_DISABLE_CPU_FEATURES")
 _PACKAGES = ("numpy", "scipy", "scikit-learn", "networkx", "torch", "torch_geometric")
 _CPUINFO = "/proc/cpuinfo"
+
+
+def _numpy_simd():
+    """The SIMD targets that numpy dispatches to on this machine (after NPY_DISABLE_CPU_FEATURES)."""
+    from importlib import import_module
+
+    for name in ("numpy._core._multiarray_umath", "numpy.core._multiarray_umath"):
+        try:
+            module = import_module(name)
+            return sorted(target for target in module.__cpu_dispatch__ if module.__cpu_features__.get(target))
+        except (ImportError, AttributeError):
+            continue
+    return None
+
+
+def _blas_libraries():
+    """BLAS and OpenMP libraries loaded in this process, with the kernel family OpenBLAS selected."""
+    try:
+        from threadpoolctl import threadpool_info
+    except ImportError:
+        return None
+    keys = ("internal_api", "version", "architecture", "threading_layer", "num_threads")
+    return [{key: info[key] for key in keys if info.get(key) is not None} for info in threadpool_info()]
 
 
 @functools.lru_cache(maxsize=1)
 def environment() -> dict:
     """The software and hardware that decide the last bits of a run's floating-point results.
 
-    Stored with every run.  BLAS and PyTorch pick their kernels by CPU model and instruction
-    set, so two executions agree bit for bit only on matching environments.  Hostnames and
-    other identifying values are not recorded.
+    Stored with every run.  BLAS, numpy and PyTorch pick their kernels by CPU model and
+    instruction set, so two executions agree bit for bit only on matching environments.  Besides
+    the CPU this records the SIMD targets numpy uses and the BLAS libraries with the kernel
+    family OpenBLAS selected.  Hostnames and other identifying values are not recorded.
     """
     import platform
     import sys
@@ -76,6 +100,7 @@ def environment() -> dict:
     return {"python": sys.version.split()[0], "platform": platform.platform(),
             "cpu_model": model or platform.processor() or None, "cpu_simd": simd, "cpu_count": os.cpu_count(),
             "packages": {name: version(name) for name in _PACKAGES},
+            "numpy_simd": _numpy_simd(), "blas": _blas_libraries(),
             "variables": {name: os.environ[name] for name in _ENV_VARS if name in os.environ}}
 
 

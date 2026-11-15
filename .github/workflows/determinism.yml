@@ -1,11 +1,12 @@
 name: determinism
 
-# Does a run repeat bit for bit?  Each of eight jobs, on a runner of its own, trains one
-# configuration (n-HDP-GNN by default) twice per seed in separate processes with the
-# default kernel selection and twice with the instruction set pinned
-# (scripts/check_reproducibility.py), and prints one RESULT line per run with the runner's
-# CPU model, so that jobs that landed on different CPUs can be compared.  The job log ends
-# with a summary of which repeats and which variants agree.
+# Does a run repeat bit for bit, and does it agree across machines?  Each of eight jobs, on a
+# runner of its own (GitHub assigns different CPU models), trains one configuration (n-HDP-GNN
+# by default) in separate processes, `repeats` times per seed and kernel selection
+# (scripts/check_reproducibility.py; the variants are listed in its docstring), and prints one
+# RESULT line per run with the runner's CPU model, so that jobs that landed on different CPUs
+# can be compared.  A run that crashes is reported and the job goes on.  The job log ends with a
+# summary of which repeats and which variants agree.
 #
 # Start it by hand: Actions tab -> "determinism" -> "Run workflow".
 
@@ -21,6 +22,9 @@ on:
       repeats:
         description: "runs per seed and variant"
         default: "2"
+      variants:
+        description: "kernel selections, space separated (see scripts/check_reproducibility.py)"
+        default: "default pinned"
 
 permissions:
   contents: read
@@ -56,4 +60,5 @@ jobs:
           DATASET: ${{ inputs.dataset }}
           SEEDS: ${{ inputs.seeds }}
           REPEATS: ${{ inputs.repeats }}
-        run: python scripts/check_reproducibility.py --dataset "$DATASET" --seeds $SEEDS --repeats "$REPEATS"
+          VARIANTS: ${{ inputs.variants }}
+        run: python scripts/check_reproducibility.py --dataset "$DATASET" --seeds $SEEDS --repeats "$REPEATS" --variants $VARIANTS

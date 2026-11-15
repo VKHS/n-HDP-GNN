@@ -109,10 +109,14 @@ need a cluster.
 configuration repeatedly, each time in a process of its own with a cache directory of its own,
 with the default kernel selection and with the instruction set pinned
 (`ATEN_CPU_CAPABILITY=avx2`, `MKL_CBWR=AVX2`, `OPENBLAS_CORETYPE=HASWELL`,
-`ONEDNN_MAX_CPU_ISA=AVX2`). It prints one `RESULT` line per run (metrics, best epoch, a
-fingerprint of the n-HDP objective trace, the CPU model) and says which repeats and which variants
-agree. The `determinism` workflow (Actions tab, "Run workflow") runs it on eight GitHub runners, so
-that the lines of runners with different CPUs can be compared.
+`ONEDNN_MAX_CPU_ISA=AVX2`); `--variants` also offers each of these settings on its own, numpy's
+SIMD dispatch limited to AVX2 (`numpy`) and everything together (`all`). It prints one `RESULT`
+line per run (metrics, best epoch, fingerprints of the n-HDP objective trace and of the trained
+model's outputs, the CPU model, the numpy SIMD targets and the OpenBLAS kernel family) and says
+which repeats and which variants agree. A run that dies, for example with a segmentation fault, is
+reported as crashed and the script goes on. The `determinism` workflow (Actions tab, "Run
+workflow") runs it on eight GitHub runners, so that the lines of runners with different CPUs can
+be compared.
 
 ## Measured artifacts without training
 

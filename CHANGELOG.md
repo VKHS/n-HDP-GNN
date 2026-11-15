@@ -21,10 +21,12 @@
   (`scripts/publish_results.py`, retried when another job pushed first), so results appear while
   a sweep runs instead of after its last job.
 - Every run records its `environment` (CPU model and instruction sets, Python and library versions,
-  thread and BLAS variables), because executions of the same configuration are not always bit-identical
-  (`results/README.md`).
+  thread and BLAS variables, numpy's SIMD targets and the kernel family OpenBLAS selected), because
+  executions of the same configuration are not always bit-identical (`results/README.md`).
 - `scripts/check_reproducibility.py` and the manual `determinism` workflow repeat one configuration
-  in separate processes, with the default and with a pinned instruction set, and compare the results.
+  in separate processes under different kernel selections (default, pinned instruction sets, each
+  setting on its own, numpy's SIMD dispatch), fingerprint the n-HDP objective trace and the trained
+  model's outputs, report a run that crashes and go on, and compare the results.
 - Tables are byte-identical for the same records, whatever order the records are read in, and
   order labels naturally (heads-2 before heads-10).
 - Table 5 and Fig. 11 run on GitHub-hosted runners for Cora, CiteSeer, PubMed, Photo and
