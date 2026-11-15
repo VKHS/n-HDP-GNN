@@ -28,11 +28,11 @@ measurements behind the decision.
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
-| `table2_full` | Tables 2, 6-8 | 2400 | running | |
-| `table3_semi` | Tables 3, 6-8 | 2400 | running | |
-| `table4_scarce` | Tables 4, 6-8 | 2400 | running | |
-| `table5_clustering` | Table 5 | 200 of 280 (without ogbn-products and ogbn-proteins) | running | |
-| `fig11_heads` | Fig. 11 | 250 of 350 (without ogbn-products and ogbn-proteins) | running | |
+| `table2_full` | Tables 2, 6-8 | 2400 | running | [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273) |
+| `table3_semi` | Tables 3, 6-8 | 2400 | running | [43658909026](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658909026) |
+| `table4_scarce` | Tables 4, 6-8 | 2400 | running | [43658916220](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658916220) |
+| `table5_clustering` | Table 5 | 200 of 280 (without ogbn-products and ogbn-proteins) | running | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
+| `fig11_heads` | Fig. 11 | 250 of 350 (without ogbn-products and ogbn-proteins) | running | [43658893455](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658893455) |
 | multi-node scaling, OGB depth runs, ogbn-products and ogbn-proteins | Tables 5, 9-12, Fig. 11 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
 
 ## Table 1: component ablation (full supervision, depth 2)
