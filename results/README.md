@@ -36,7 +36,7 @@ n-HDP-GNN, 0.53 for GCNII and 0.20 for GAT, while GCN, SGC and Graph U-Net were 
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
-| `table2_full` | Tables 2, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table2_full/results/table2_full)) | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781) |
+| [`table2_full`](table2_full/README.md) | Tables 2, 6-8 | 2248 / 2400 completed, 152 failed (87 memory, 25 time, 40 error) | complete; the 40 errors (Graph U-Net with NaN outputs) are being re-run to record them as diverged | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781), continuing [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273) |
 | `table3_semi` | Tables 3, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table3_semi/results/table3_semi)) | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352) |
 | `table4_scarce` | Tables 4, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table4_scarce/results/table4_scarce)) | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785) |
 | [`table5_clustering`](table5_clustering/README.md) | Table 5 | 190 / 200 completed, 10 failed (memory); without ogbn-products and ogbn-proteins | complete | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
@@ -129,3 +129,43 @@ head count is in [fig11_heads/README.md](fig11_heads/README.md).
 * On ogbn-arxiv only one and two heads finished: with 4 and 6 heads an epoch took 16-52 s,
   so training provably needed more than 150 minutes; with 8 or more heads a run needed more
   than 13 GB.
+
+## Table 2: depth, full supervision (60/20/20 split)
+
+Test accuracy (%), mean over 10 seeds; [table2_full/README.md](table2_full/README.md) has every
+depth and model with 95% intervals and Wilcoxon p-values against n-HDP-GNN, and the same tables
+for the centroid gap (Eq. 28) and MADGap of the logits (Tables 6-8), seconds per epoch and peak
+memory. With 10 seeds the smallest possible p-value is 0.002.
+
+| Dataset | n-HDP-GNN, depth 2 / 10 / 30 | Highest other models at depth 30 | Below 50% at depth 30 |
+|---|---|---|---|
+| Cora | 80.30 / 82.91 / 82.87 | APPNP 88.35, GCNII 87.67 | GCN 30.19, GAT 30.44, ARMA 30.11, DropEdge 30.19, SGC 34.98 |
+| CiteSeer | 71.49 / 70.77 / 71.79 | APPNP 76.67, GCNII 75.84 | GCN 21.79, GAT 21.87, ARMA 20.69, DropEdge 22.58, PairNorm 37.83 |
+| PubMed | 87.59 / 87.66 / 87.83 | GCNII 88.35, APPNP 87.87 | GCN 47.55, GAT 41.48, ARMA 40.25, DropEdge 40.48 |
+| Photo | 86.94 / 86.30 / 55.28 | APPNP 91.25, PairNorm 83.30 | GAT 25.71, ARMA 26.21, SGC 27.93 |
+
+* n-HDP-GNN's accuracy changes little with depth on Cora, CiteSeer and PubMed (within 2.6, 1.3
+  and 0.3 points between depths 2 and 30). On Photo it falls at depths 20 and 30
+  (55.78 ± 19.63 and 55.28 ± 21.19) with a large spread between seeds.
+* GCN, GAT, ARMA and DropEdge fall to 20-48% by depth 30 on Cora, CiteSeer and PubMed (on Cora
+  to the share of the largest class, 30.2%); there n-HDP-GNN is higher than all four at depth 30
+  (p = 0.002 each).
+* APPNP and GCNII hardly degrade with depth and are above n-HDP-GNN at every depth on Cora and
+  CiteSeer (p ≤ 0.004 at depth 30). On PubMed at depth 30 GCNII is higher (p = 0.014) and APPNP
+  level (p = 0.85).
+* Centroid gap and MADGap of the logits at depth 30: n-HDP-GNN keeps them (centroid gap / MADGap
+  1.02 / 0.65 on Cora, 0.94 / 0.72 on CiteSeer, 1.11 / 0.71 on PubMed), as do APPNP and GCNII
+  (Cora 0.91 / 0.69 and 0.86 / 0.63), while for GAT, ARMA and DropEdge the centroid gap is within
+  0.003 of zero on these three graphs (GCN: 0.22 on PubMed, within 0.001 of zero on Cora and
+  CiteSeer). On Photo n-HDP-GNN's centroid gap drops to 0.32 at depth 30.
+* SGC underfits under the shared protocol here too (Cora 46.41, Photo 44.09 at depth 2).
+* Graph U-Net exceeded 13 GB on Photo at every depth and on PubMed from depth 4 (or needed more
+  than 150 minutes); with 10 and 15 pooling levels (depth 20 and 30) it gives NaN outputs on Cora
+  and CiteSeer. Those 40 runs ended in an exception in the diagnostics and are recorded as errors;
+  the current code records such runs as diverged, and they are being re-run to label them so.
+* Cost at depth 30 (one thread, four runs per 4-vCPU runner): n-HDP-GNN takes 0.70, 0.94, 4.0 and
+  9.2 s per epoch on Cora, CiteSeer, PubMed and Photo, about as much as GAT (0.51, 0.76, 3.6, 9.2)
+  and more than GCN (0.32, 0.60, 3.2, 5.4) and APPNP (0.13, 0.35, 0.45, 0.74); SGC recomputes its
+  propagation in every epoch (`cached=False`) and is the slowest. Its peak memory at depth 30 is
+  3814 MB on PubMed and 4440 MB on Photo. Peak memory is recorded only for runs that had a process
+  of their own (from commit 20d9d0f on), so some cells have fewer than 10 values.
