@@ -1,0 +1,87 @@
+{
+  "sweep": "configs/fig11_heads.toml",
+  "name": "fig11_heads",
+  "only": {
+    "dataset": "cora|citeseer|pubmed|photo|ogbn-arxiv"
+  },
+  "overrides": {},
+  "expected": 250,
+  "completed": 210,
+  "failed": 34,
+  "failed_by_reason": {
+    "memory": 27,
+    "time": 7
+  },
+  "missing": 6,
+  "failed_keys": [
+    "09df01a084d9",
+    "0b407194ef0e",
+    "0b91c4cff5a6",
+    "1176f60165e0",
+    "16877863c0d5",
+    "1891e3b75ad0",
+    "1a3a8eb2fd24",
+    "48da714ab296",
+    "49ba2fe8f403",
+    "523bb8d5b1df",
+    "695fb2e4c18e",
+    "7690323b0844",
+    "79d0959f9da4",
+    "7d0b248fd8fd",
+    "7ebf91429467",
+    "88f895bf9710",
+    "9224f0f7e26e",
+    "928da1bdd85e",
+    "9355be174298",
+    "957a0c8064ad",
+    "986d13c24b3e",
+    "a182cb365e48",
+    "a3e8184ff299",
+    "a63b0bf6e8a2",
+    "a84e79846522",
+    "c93bcdaf147d",
+    "c9db672fa2d0",
+    "df5cf610282c",
+    "e2924ad3d002",
+    "ec8cf919e072",
+    "f110cf0f6cff",
+    "f1ab2f306815",
+    "fa9214965a05",
+    "fcf74f8a2308"
+  ],
+  "missing_keys": [
+    "46f414d71698",
+    "c9e556968c9b",
+    "d25777f0966a",
+    "6439436e01a9",
+    "b3bc919eff5b",
+    "41e2fe5266f4"
+  ],
+  "code_commits": [
+    "20d9d0fac98f9a83bb60e54bf36ddf1c98869b65"
+  ],
+  "base": {
+    "regime": "full",
+    "depth": 10,
+    "epochs": 500,
+    "patience": 100
+  },
+  "grid": {
+    "dataset": [
+      "cora",
+      "citeseer",
+      "pubmed",
+      "photo",
+      "ogbn-arxiv",
+      "ogbn-products",
+      "ogbn-proteins"
+    ],
+    "seed": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}
