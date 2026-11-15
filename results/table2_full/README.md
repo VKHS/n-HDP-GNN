@@ -1,6 +1,6 @@
 # table2_full
 
-Sweep `configs/table2_full.toml`: 2400 runs expected, 1138 completed, 0 failed, 1262 missing.
+Sweep `configs/table2_full.toml`: 2400 runs expected, 1139 completed, 0 failed, 1261 missing.
 
 Values are mean ± 95% t-interval over seeds; n is the number of completed seeds in the cell.
 
@@ -75,7 +75,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gcn | 92.28 ± 1.72 (n=3) |  |  |  |  |  |
 | gcnii | 92.87 ± 1.87 (n=3) |  |  |  |  |  |
 | nhdp | 86.94 ± 3.71 (n=10) | 84.47 ± 7.95 (n=10) | 84.29 ± 4.70 (n=7) | 85.58 ± 6.15 (n=7) | 52.87 ± 34.82 (n=5) | 45.10 ± 33.97 (n=5) |
-| pairnorm |  |  |  | 92.73 ± 0.52 (n=10) | 88.32 ± 1.51 (n=10) | 84.03 ± 1.01 (n=6) |
+| pairnorm |  |  |  | 92.73 ± 0.52 (n=10) | 88.32 ± 1.51 (n=10) | 84.01 ± 0.81 (n=7) |
 | sgc | 43.60 ± 5.88 (n=9) | 38.47 ± 8.64 (n=8) | 31.54 ± 10.58 (n=5) | 32.86 ± 95.15 (n=2) |  |  |
 
 Wilcoxon p-value vs nhdp (paired by seed)
@@ -88,7 +88,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gat | 0.00195 | 0.00195 | 0.0156 | 0.297 | 0.125 | 0.25 |
 | gcn | 0.25 |  |  |  |  |  |
 | gcnii | 0.25 |  |  |  |  |  |
-| pairnorm |  |  |  | 0.0156 | 0.125 | 0.5 |
+| pairnorm |  |  |  | 0.0156 | 0.125 | 0.25 |
 | sgc | 0.00391 | 0.00781 | 0.125 |  |  |  |
 
 **pubmed** -- test
@@ -160,7 +160,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gcn | 0.91 ± 0.03 (n=3) |  |  |  |  |  |
 | gcnii | 0.94 ± 0.04 (n=3) |  |  |  |  |  |
 | nhdp | 0.69 ± 0.18 (n=10) | 0.75 ± 0.16 (n=10) | 0.69 ± 0.20 (n=7) | 0.81 ± 0.12 (n=7) | 0.26 ± 0.50 (n=5) | 0.15 ± 0.42 (n=5) |
-| pairnorm |  |  |  | 0.64 ± 0.02 (n=10) | 0.80 ± 0.02 (n=10) | 0.78 ± 0.01 (n=6) |
+| pairnorm |  |  |  | 0.64 ± 0.02 (n=10) | 0.80 ± 0.02 (n=10) | 0.78 ± 0.01 (n=7) |
 | sgc | 0.01 ± 0.02 (n=9) | 0.01 ± 0.02 (n=8) | -0.00 ± 0.00 (n=5) | -0.00 ± 0.01 (n=2) |  |  |
 
 **pubmed** -- embedding.centroid_gap
@@ -219,7 +219,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gcn | 0.44 ± 0.04 (n=3) |  |  |  |  |  |
 | gcnii | 0.39 ± 0.18 (n=3) |  |  |  |  |  |
 | nhdp | 0.28 ± 0.06 (n=10) | 0.36 ± 0.07 (n=10) | 0.27 ± 0.05 (n=7) | 0.37 ± 0.06 (n=7) | 0.11 ± 0.20 (n=5) | 0.09 ± 0.25 (n=5) |
-| pairnorm |  |  |  | 0.23 ± 0.01 (n=10) | 0.36 ± 0.04 (n=10) | 0.31 ± 0.09 (n=6) |
+| pairnorm |  |  |  | 0.23 ± 0.01 (n=10) | 0.36 ± 0.04 (n=10) | 0.30 ± 0.08 (n=7) |
 | sgc | 0.02 ± 0.03 (n=9) | 0.01 ± 0.03 (n=8) | 0.00 ± 0.00 (n=5) | 0.00 ± 0.00 (n=2) |  |  |
 
 **pubmed** -- embedding.madgap
@@ -278,7 +278,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gcn | 0.29 ± 0.06 (n=3) |  |  |  |  |  |
 | gcnii | 0.44 ± 0.09 (n=3) |  |  |  |  |  |
 | nhdp | 0.76 ± 0.09 (n=10) | 1.44 ± 0.17 (n=10) | 2.45 ± 0.25 (n=7) | 2.66 ± 0.34 (n=7) | 4.84 ± 1.61 (n=5) | 9.50 ± 1.52 (n=5) |
-| pairnorm |  |  |  | 1.53 ± 0.17 (n=10) | 3.11 ± 0.34 (n=10) | 4.18 ± 0.55 (n=6) |
+| pairnorm |  |  |  | 1.53 ± 0.17 (n=10) | 3.11 ± 0.34 (n=10) | 4.10 ± 0.48 (n=7) |
 | sgc | 1.97 ± 0.17 (n=9) | 4.09 ± 0.50 (n=8) | 8.13 ± 0.71 (n=5) | 7.47 ± 0.51 (n=2) |  |  |
 
 **pubmed** -- timings.epoch_s_mean
@@ -329,7 +329,7 @@ Wilcoxon p-value vs nhdp (paired by seed)
 | gcn | 797.66 ± 9.69 (n=3) |  |  |  |  |  |
 | gcnii | 807.06 ± 2.27 (n=3) |  |  |  |  |  |
 | nhdp | 1105.97 ± 7.08 (n=10) | 1324.94 ± 12.77 (n=10) | 1827.70 ± 12.27 (n=7) | 2083.16 ± 22.45 (n=7) | 3251.92 ± 21.13 (n=5) | 4426.65 ± 30.62 (n=5) |
-| pairnorm |  |  |  | 963.53 ± 4.36 (n=10) | 1174.95 ± 2.55 (n=10) | 1380.32 ± 4.69 (n=6) |
+| pairnorm |  |  |  | 963.53 ± 4.36 (n=10) | 1174.95 ± 2.55 (n=10) | 1380.49 ± 3.80 (n=7) |
 | sgc |  | 2074.30 ± 4.00 (n=2) | 2075.68 ± 2.97 (n=5) | 2075.80 ± 15.86 (n=2) |  |  |
 
 **pubmed** -- peak_rss_mb
@@ -1509,7 +1509,6 @@ Not attempted, or stopped by the job's deadline.
 | 75451c42f009 | photo | pairnorm |  | 8 | 7 |
 | ee0105c2082e | photo | pairnorm |  | 8 | 8 |
 | 5666d75c06ff | photo | pairnorm |  | 8 | 9 |
-| 5b30c9deef94 | photo | pairnorm |  | 30 | 0 |
 | d93b0e54eaad | photo | pairnorm |  | 30 | 3 |
 | 79dcd486ce21 | photo | pairnorm |  | 30 | 5 |
 | 414ee10517e2 | photo | pairnorm |  | 30 | 7 |
