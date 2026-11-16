@@ -42,18 +42,47 @@ largest relative difference along a trace is between 6·10⁻¹⁶ and 9·10⁻�
 the same number of iterations), and in all 7 pairs with the same test accuracy the traces are
 identical. The two executions of a differing pair
 therefore differ in their floating-point arithmetic, which shows in Stage B and, in the same pairs,
-in the trained model. What differs between the executions is not known: these runs do not record
-their CPU or library versions. A different CPU model, which selects other BLAS and PyTorch kernels,
-is a candidate that has not been tested. Later runs record their `environment` (CPU model and
-instruction sets, library versions, thread and BLAS variables). Single runs should be compared
-through means over seeds, as the tables do.
+in the trained model. These runs did not record their CPU or library versions, so what differed
+between their two executions is not known. The manual `determinism` workflow measures what the CPU
+model does: it trains n-HDP-GNN (Cora, full supervision, depth 2, one thread, a process per run)
+twice per seed and kernel selection on each of eight GitHub runners (two executions:
+[43746860276](https://github.com/VKHS/n-HDP-GNN/actions/runs/43746860276), seeds 0-2, default and
+pinned kernels, and
+[43764052765](https://github.com/VKHS/n-HDP-GNN/actions/runs/43764052765), seeds 0-1, eight kernel
+selections).
+
+* On one CPU model, repeats are bit-identical. In the second execution all 110 groups of finished
+  repeats agree in test accuracy, best epoch, Stage-B trace and the fingerprint of the trained
+  model's outputs, runners of the same CPU model agree with each other, and their test accuracy,
+  best epoch and Stage-B trace equal those of the first execution (numpy 2.5.4 there, 2.5.5 in the
+  second).
+* Different CPU models give different results. With the default kernels seed 0 reached 76.30% on
+  AMD EPYC 7763, 79.26% on AMD EPYC 9V45 and 78.15% on Intel Xeon Platinum 8573C and on Xeon
+  6975P-C (2.96 points between the highest and the lowest); seed 1 reached 81.48%, 80.19% and
+  80.74% (1.30 points). The two Intel models agree in every kernel selection.
+* No kernel selection made the four models agree. Limiting ATen, MKL, oneDNN or OpenBLAS to AVX2
+  (Haswell kernels in OpenBLAS), and numpy's SIMD dispatch to AVX2, each alone and all together,
+  still gave at least two different results per seed. The one agreement beyond the Intel pair is
+  EPYC 7763 with EPYC 9V45 under `ATEN_CPU_CAPABILITY=avx2`: the same test accuracy, best epoch and
+  output fingerprint, but not the same Stage-B trace.
+* `OPENBLAS_CORETYPE=HASWELL` ends the process with a segmentation fault on AMD EPYC 9V45: all
+  12 runs of the three kernel selections that contain it (`openblas`, `pinned`, `all`) in each of
+  three jobs, and no run of the other five. The first execution's `pinned` selection also died on
+  AMD EPYC 9V74. The other CPU models did not crash. The Python stack of the second execution ends
+  in scikit-learn's randomized SVD, called from `reduce_features` (`nhdp_gnn/nhdp.py`); why it
+  crashes is not known.
+
+The CPU model that GitHub assigns to a runner is therefore a source of variation in every sweep
+here. Which CPU produced which of the 29 differences above is not known. Later runs record their
+`environment` (CPU model and instruction sets, library versions, thread and BLAS variables).
+Single runs should be compared through means over seeds, as the tables do.
 
 | Sweep | Article | Runs | Status | Workflow run |
 |---|---|---|---|---|
 | [`table1_ablation`](table1_ablation/README.md) | Table 1 | 400 / 400 | complete | [43643974046](https://github.com/VKHS/n-HDP-GNN/actions/runs/43643974046) |
 | [`table2_full`](table2_full/README.md) | Tables 2, 6-8 | 2248 / 2400 completed, 152 failed (87 memory, 25 time, 40 diverged) | complete | [43678475781](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678475781), continuing [43658901273](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658901273); the 40 diverged runs re-run in [43731956974](https://github.com/VKHS/n-HDP-GNN/actions/runs/43731956974) |
 | [`table3_semi`](table3_semi/README.md) | Tables 3, 6-8 | 2241 / 2400 completed, 159 failed (88 memory, 31 time, 40 diverged) | complete | [43678483352](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678483352), continuing [43645884923](https://github.com/VKHS/n-HDP-GNN/actions/runs/43645884923); the 40 diverged runs re-run in [43763047138](https://github.com/VKHS/n-HDP-GNN/actions/runs/43763047138) |
-| `table4_scarce` | Tables 4, 6-8 | 2400 | running ([live tables](https://github.com/VKHS/n-HDP-GNN/tree/results/table4_scarce/results/table4_scarce)) | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785) |
+| [`table4_scarce`](table4_scarce/README.md) | Tables 4, 6-8 | 2248 / 2400 completed, 152 failed (92 memory, 20 time, 40 error) | complete | [43678490785](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678490785), continuing [43645890551](https://github.com/VKHS/n-HDP-GNN/actions/runs/43645890551); the 40 error runs (Graph U-Net, NaN outputs) are being re-run in [43855293851](https://github.com/VKHS/n-HDP-GNN/actions/runs/43855293851) |
 | [`table5_clustering`](table5_clustering/README.md) | Table 5 | 190 / 200 completed, 10 failed (memory); without ogbn-products and ogbn-proteins | complete | [43658886877](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658886877) |
 | [`fig11_heads`](fig11_heads/README.md) | Fig. 11 | 210 / 250 completed, 40 failed (30 memory, 10 time); without ogbn-products and ogbn-proteins | complete | [43678422172](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678422172), continuing [43658893455](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658893455) |
 | multi-node scaling, OGB depth runs, ogbn-products and ogbn-proteins | Tables 5, 9-12, Fig. 11 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
@@ -195,6 +224,75 @@ p-value is 0.002.
   s; the Photo value is from the five runs that finished). The peak memory of n-HDP-GNN at depth
   30 is 3847 MB on PubMed and 4431 MB on Photo. Peak memory is recorded only for runs that had a
   process of their own (from commit 20d9d0f on), so some cells have fewer than 10 values.
+
+## Table 4: depth, scarce supervision (5% labels)
+
+Test accuracy (%), mean over 10 seeds, with 5% of the nodes labelled (stratified, drawn from the
+training pool of the full regime: 136, 165, 986 and 382 labelled nodes on Cora, CiteSeer, PubMed
+and Photo; the validation and test nodes are those of the full regime);
+[table4_scarce/README.md](table4_scarce/README.md) has every depth and model with 95% intervals and
+Wilcoxon p-values against n-HDP-GNN, and the same tables for the centroid gap and MADGap of the
+logits (Tables 6-8), seconds per epoch and peak memory. With 10 seeds the smallest possible
+p-value is 0.002.
+
+| Dataset | n-HDP-GNN, depth 2 / 10 / 30 | Highest other model at depth 2 | Highest other models at depth 30 | Below 50% at depth 30 |
+|---|---|---|---|---|
+| Cora | 64.57 / 64.69 / 62.02 | GAT 80.67 | APPNP 82.37, GCNII 79.30 | ARMA 28.61, DropEdge 30.19, GAT 30.19, GCN 32.76, SGC 36.76, PairNorm 40.96 |
+| CiteSeer | 61.99 / 60.74 / 59.73 | DropEdge 69.79 | APPNP 69.73, GCNII 67.92 | ARMA 19.92, GAT 22.94, DropEdge 23.21, PairNorm 26.02, GCN 38.61 |
+| PubMed | 81.71 / 82.82 / 83.00 | APPNP 85.44 | APPNP 85.19, GCNII 84.71 | ARMA 40.06, DropEdge 40.84, GCN 42.14, GAT 43.27 |
+| Photo | 79.87 / 68.07 / 38.41 | ARMA 92.87 | APPNP 90.55, GCNII 80.49 | GAT 25.38, ARMA 26.31, SGC 28.23, DropEdge 48.79 |
+
+* At depth 2 n-HDP-GNN is below every other model on CiteSeer, and below every other model except
+  SGC on Cora, PubMed and Photo (SGC: 40.22, 79.65 and 38.34). The highest model (GAT, DropEdge,
+  APPNP and ARMA) is 16.09, 7.80, 3.73 and 13.00 points above it on Cora, CiteSeer, PubMed and
+  Photo, with p = 0.002 against every model except SGC on CiteSeer and PubMed (p = 0.020 and
+  0.275) and Graph U-Net on CiteSeer (p = 0.004). At depth 4 the gap to the highest model (APPNP
+  on Cora, CiteSeer and PubMed, ARMA on Photo) is 16.11, 7.86, 3.21 and 18.95 points. These are
+  the shared hyper-parameters of `configs/table4_scarce.toml`; other settings for n-HDP-GNN were
+  not tried here.
+* n-HDP-GNN's accuracy changes little with depth on Cora (62.02-64.98 over the six depths),
+  CiteSeer (59.73-62.08) and PubMed (81.71-83.00). On Photo it falls from 79.87 at depth 2 to
+  68.07 at depth 10 and 38.41 at depth 30, with intervals from ± 4.14 (depth 2) to ± 17.90
+  (depth 20): at depth 20 six of ten seeds end at 25.4-27.3% with a best validation epoch between
+  2 and 119, and at depth 30 six of ten end at 25.4% with a best epoch between 1 and 6.
+* GAT, ARMA and DropEdge are below 50% at depth 30 on all four graphs, GCN on Cora, CiteSeer and
+  PubMed, PairNorm on Cora and CiteSeer, and SGC on Cora and Photo. n-HDP-GNN is higher than every
+  model below 50% at depth 30 on Cora, CiteSeer and PubMed (p = 0.002 each). On Photo it does not
+  differ from GAT, ARMA, SGC or DropEdge at depth 30 (p between 0.125 and 0.25), and GCN and
+  PairNorm are above it (p = 0.014 and 0.020).
+* APPNP is above n-HDP-GNN in all 24 dataset-depth cells (p = 0.002 in each); its mean varies by
+  0.35-1.78 points over the six depths on CiteSeer, PubMed and Photo and by 3.00 on Cora (79.37 at
+  depth 2, 82.37 at depth 30). GCNII is also above n-HDP-GNN in all 24 cells (p ≤ 0.05 in 23; the
+  exception is PubMed at depth 10, p = 0.131), with p = 0.002 at depth 30 on all four graphs; its
+  mean falls on Photo from 91.04 at depth 2 to 80.49 at depth 30. At depth 30 n-HDP-GNN is third
+  highest of nine models on Cora and PubMed, fourth on CiteSeer and sixth on Photo (Graph U-Net
+  has no result at depth 30).
+* Centroid gap and MADGap of the logits at depth 30: n-HDP-GNN keeps them on Cora (0.70 / 0.46),
+  CiteSeer (0.57 / 0.61) and PubMed (0.97 / 0.64), as do APPNP (0.65 / 0.60, 0.58 / 0.81,
+  1.16 / 0.87) and GCNII (0.66 / 0.64, 0.50 / 0.78, 1.19 / 0.88), while for GAT, ARMA and DropEdge
+  the centroid gap is within 0.005 of zero on these three graphs (and for GAT and ARMA on Photo).
+  On Photo n-HDP-GNN's centroid gap falls from 0.49 at depth 2 to 0.07 at depth 30 (MADGap 0.22
+  to 0.05), while APPNP (0.84), GCNII (0.65), PairNorm (0.60) and GCN (0.50) are well above it.
+* SGC reaches 40.22 and 38.34 at depth 2 on Cora and Photo, against 64.79 and 79.65 on CiteSeer
+  and PubMed (GCN: 79.69, 91.09, 69.31 and 84.81). On Cora its best validation epoch lies between
+  2 and 14 in all ten seeds and training stops 100 epochs later (102-114 epochs run); on Photo it
+  lies between 1 and 57 in nine of ten seeds (the tenth: 245). The sweep of Table 3 differs from
+  this one only in the regime, and there the same SGC reached 77.82 on Cora and 68.04 on Photo at
+  depth 2. The cause of the difference is not established. On PubMed at depth 30, 2 of its 10 runs
+  needed more than 150 minutes, leaving n = 8.
+* Graph U-Net finished depths 2-10 on Cora and CiteSeer, but on PubMed only depth 2 and on Photo no
+  depth. It exceeded 13 GB in all 60 Photo runs, and on PubMed from depth 4 it either exceeded
+  13 GB (32 of 50 runs) or needed more than 150 minutes (18 of 50). With 10 and 15 pooling levels
+  (depth 20 and 30) it gives NaN outputs on Cora and CiteSeer; in these 40 runs k-means in the
+  diagnostics raised `Input X contains NaN`, so they are recorded as errors. They are being re-run
+  with the current code, which records them as diverged
+  ([43855293851](https://github.com/VKHS/n-HDP-GNN/actions/runs/43855293851)).
+* Cost at depth 30 (one thread, four runs per 4-vCPU runner): n-HDP-GNN takes 0.60, 0.91, 3.87
+  and 8.86 s per epoch on Cora, CiteSeer, PubMed and Photo, against 0.50, 0.73, 3.54 and 8.37 for
+  GAT, 0.30, 0.56, 3.02 and 5.01 for GCN and 0.12, 0.34, 0.42 and 0.73 for APPNP. SGC recomputes
+  its propagation in every epoch (`cached=False`) and is the slowest (3.17, 7.75, 9.32 and 28.24
+  s; the PubMed value is from the eight runs that finished). The peak memory of n-HDP-GNN at depth
+  30 is 3839 MB on PubMed and 4446 MB on Photo; every completed run recorded its peak memory.
 
 ## Table 5: classification and clustering (full supervision, depth 2)
 

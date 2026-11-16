@@ -118,6 +118,14 @@ reported as crashed and the script goes on. The `determinism` workflow (Actions 
 workflow") runs it on eight GitHub runners, so that the lines of runners with different CPUs can
 be compared.
 
+What it showed on GitHub's runners (details in [results/README.md](../results/README.md)): repeats
+on one CPU model are bit-identical; different CPU models give different results, and none of the
+kernel selections above made the four CPU models seen (AMD EPYC 7763 and 9V45, Intel Xeon Platinum
+8573C and Xeon 6975P-C) agree. `OPENBLAS_CORETYPE=HASWELL` (`openblas`, `pinned` and `all`) crashes
+with a segmentation fault on AMD EPYC 9V45, and the `pinned` selection of the first execution also
+on EPYC 9V74, so do not pin it on such machines. To reproduce a run bit for bit, use the same CPU
+model; the `environment` of every run records it.
+
 ## Measured artifacts without training
 
 `python -m nhdp_gnn.artifacts` (numpy only) measures stages A and B, the partition
@@ -136,8 +144,12 @@ draws the figures and `artifacts/SUMMARY.md`. See [artifacts/README.md](../artif
 * **Repeated runs**: two executions of the same configuration and seed are not always bit-identical
   (the measured cases are in [results/README.md](../results/README.md)): the floating-point results of
   the n-HDP stage differ in the last bits between some executions, and the trained models differ with
-  them. Each run records its `environment` (CPU model and instruction sets, library versions, thread
-  and BLAS variables) so that such differences can be traced; compare means over seeds, not single runs.
+  them. On one CPU model repeats are identical; across CPU models they are not (up to 2.96 points of
+  test accuracy for one seed of n-HDP-GNN on Cora in the `determinism` runs), and the kernel
+  selections tried did not remove the difference. Each run records its `environment` (CPU model and
+  instruction sets, library versions, thread and BLAS variables) so that such differences can be
+  traced; compare means over seeds, not single runs. The sweeps of Tables 1-5 and Fig. 11 recorded no
+  `environment`.
 * **Same partition for every method** in multi-part and distributed runs: the partition depends only on the data, the method and the seed.
 * **Depth** is the number of propagation steps; each JSON records it as `propagation_depth`. Graph U-Net maps depth L to max(1, ⌊L/2⌋) pooling levels, i.e. 2·levels + 1 GCN layers, so every depth row is a different network.
 * **Embedding diagnostics** (Tables 5-8: centroid gap, MADGap, k-means NMI/ARI) are computed on the logits, the one representation every model has. `embedding.centroid_gap_per_layer` profiles the hidden layers of the models that have a layer-wise hidden stack (n-HDP-GNN, GCN, GAT, ARMA, GCNII, PairNorm, DropEdge).
