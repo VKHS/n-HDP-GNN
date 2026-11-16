@@ -100,6 +100,9 @@ or the time limit are reported as failed, with the reason, instead of a value.
 | Trained models: Tables 1-8 and Fig. 11 (Cora, CiteSeer, PubMed, Photo; ogbn-arxiv in Table 5 and Fig. 11) | [`results/`](results/README.md) | Table 1 (400 runs), Table 2 (2248 of 2400 runs completed, 152 failed), Table 3 (2241 of 2400, 159 failed), Table 4 (2248 of 2400, 152 failed), Table 5 (190 of 200, 10 out of memory) and Fig. 11 (210 of 250, 40 out of memory or time) complete |
 | Multi-node scaling (Tables 9-12) and OGB-scale depth runs | `results/` | need a CPU cluster (`scripts/launch_cluster.sh`); not included yet |
 
+[results/README.md](results/README.md) opens with a summary of what the trained runs show,
+including where n-HDP-GNN is below the baselines under the shared hyper-parameters.
+
 Every number under `artifacts/` was produced by the command recorded in
 `artifacts/manifest.json`, at the code commit recorded there.
 

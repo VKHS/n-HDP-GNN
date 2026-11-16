@@ -87,6 +87,43 @@ Single runs should be compared through means over seeds, as the tables do.
 | [`fig11_heads`](fig11_heads/README.md) | Fig. 11 | 210 / 250 completed, 40 failed (30 memory, 10 time); without ogbn-products and ogbn-proteins | complete | [43678422172](https://github.com/VKHS/n-HDP-GNN/actions/runs/43678422172), continuing [43658893455](https://github.com/VKHS/n-HDP-GNN/actions/runs/43658893455) |
 | multi-node scaling, OGB depth runs, ogbn-products and ogbn-proteins | Tables 5, 9-12, Fig. 11 | | need a CPU cluster (`scripts/launch_cluster.sh`) | |
 
+## Summary
+
+What the finished sweeps show, with the generic hyper-parameters of `configs/`, which are the same
+for every model (the article's own settings were not used, and n-HDP-GNN was not tuned). The
+sections below have the numbers and the exceptions.
+
+* **Components (Table 1).** Each component in the article's progression raises the mean accuracy
+  up to the one-head gated attention on all four graphs. The full model does not exceed the
+  two-head variant, and GAT with residual connections and no hierarchy is above it on Cora,
+  CiteSeer and Photo (p = 0.002 each).
+* **Shallow depth (Tables 2-4).** At depth 2 n-HDP-GNN is below the highest other model on every
+  graph in every label regime: by 8.46, 6.30, 1.35 and 7.59 points on Cora, CiteSeer, PubMed and
+  Photo with full supervision, by 19.32, 9.22, 5.85 and 19.85 with the public split and by 16.09,
+  7.80, 3.73 and 13.00 with 5% labels.
+* **Large depth (Tables 2-4).** On Cora, CiteSeer and PubMed n-HDP-GNN's accuracy changes by at
+  most 2.8 points between depth 2 and depth 30 (CiteSeer with the public split: a fall of 6.9),
+  and its centroid gap and MADGap stay clearly above zero at depth 30. GAT and ARMA fall below
+  50% on all four graphs in all three regimes, and GCN and DropEdge on Cora and CiteSeer; the
+  centroid gaps of GAT, ARMA and DropEdge are near zero or negative on Cora, CiteSeer and PubMed.
+  This agrees with the article's claim of resilience to over-smoothing, but it is not unique to
+  n-HDP-GNN: APPNP and GCNII also hold with depth, and at depth 30 both are above n-HDP-GNN's
+  mean on all four graphs in all three regimes (p ≤ 0.014, except APPNP on PubMed with full
+  supervision, p = 0.85, and GCNII on Photo with full supervision, p = 0.084). On Photo
+  n-HDP-GNN's accuracy falls at depth 20 and 30 in all three regimes, with large spreads between
+  seeds.
+* **Clustering (Table 5).** The logits of n-HDP-GNN give the highest NMI and ARI on CiteSeer and
+  PubMed and the second highest on Photo (five seeds, so these are differences of means).
+* **Heads (Fig. 11).** One head is the worst setting on Cora, CiteSeer, PubMed and ogbn-arxiv.
+  From two heads on the means are within 3.7 points on Cora, CiteSeer and PubMed; on Photo
+  accuracy is highest with two heads and unstable with more.
+* **Cells without an accuracy.** Graph U-Net has none where it needed more than 13 GB or 150
+  minutes or gave NaN outputs, and SGC's accuracy is low where early stopping ended its training
+  early (Tables 2-5); failed runs are listed with their reason, not filled in.
+* **Not measured here.** Multi-node scaling and communication (Tables 9-12), the OGB-scale depth
+  runs, ogbn-products and ogbn-proteins need a cluster; the article's own hyper-parameters were
+  not run.
+
 ## Table 1: component ablation (full supervision, depth 2)
 
 Test accuracy (%), mean over 10 seeds; Wilcoxon p-values against `full` are in
@@ -147,7 +184,10 @@ memory. With 10 seeds the smallest possible p-value is 0.002.
   (Cora 0.91 / 0.69 and 0.86 / 0.63), while for GAT, ARMA and DropEdge the centroid gap is within
   0.003 of zero on these three graphs (GCN: 0.22 on PubMed, within 0.001 of zero on Cora and
   CiteSeer). On Photo n-HDP-GNN's centroid gap drops to 0.32 at depth 30.
-* SGC underfits under the shared protocol here too (Cora 46.41, Photo 44.09 at depth 2).
+* SGC reaches 46.41 on Cora and 44.09 on Photo at depth 2 (GCN: 88.28 and 92.30). On Cora nine of
+  its ten runs stop 100 epochs after a best validation epoch between 1 and 9 and the tenth trains
+  all 500 epochs; on Photo seven stop after a best epoch between 1 and 67 and three train all 500
+  (best epoch 489-499). The Table 5 bullet below says what this points to.
 * Graph U-Net exceeded 13 GB on Photo at every depth and on PubMed from depth 4 (or needed more
   than 150 minutes); with 10 and 15 pooling levels (depth 20 and 30) it gives NaN outputs on Cora
   and CiteSeer: the model selected on validation accuracy (epoch 1; 101 epochs were run) gives
@@ -204,10 +244,10 @@ p-value is 0.002.
   centroid gap is within 0.02 of zero on these three graphs and for DropEdge it is negative
   (-0.17, -0.09, -0.12). On Photo n-HDP-GNN's centroid gap falls from 0.43 at depth 2 to 0.13 at
   depth 30.
-* SGC does not underfit on Cora, CiteSeer and PubMed here (77.82, 67.35 and 74.43 at depth 2;
-  71.16, 68.35 and 68.61 at depth 30). On Photo it reaches 68.04 at depth 2: in six of ten seeds
-  its best validation epoch is between 20 and 32, and the other four run all 500 epochs (best
-  epoch 490-500). At depth 20 and 30 on Photo 4 and 5 of its 10 runs needed more than 150
+* SGC reaches 77.82, 67.35 and 74.43 at depth 2 on Cora, CiteSeer and PubMed (GCN: 81.70, 69.54
+  and 77.04) and 71.16, 68.35 and 68.61 at depth 30. On Photo it reaches 68.04 at depth 2 (GCN:
+  89.22): in six of ten seeds its best validation epoch is between 20 and 32, and the other four
+  run all 500 epochs (best epoch 490-500). At depth 20 and 30 on Photo 4 and 5 of its 10 runs needed more than 150
   minutes, leaving n = 6 and 5.
 * Graph U-Net finished depths 2-10 on Cora and CiteSeer but on PubMed only depth 2. It exceeded
   13 GB on Photo at every depth, and on PubMed from depth 4 it either exceeded 13 GB (28 of 50
@@ -316,14 +356,16 @@ Ranks count the models with results (Graph U-Net has none on Photo and ogbn-arxi
   p-value is 0.0625), so these are differences of means: on CiteSeer the 95% intervals do not
   overlap (NMI 0.67 ± 0.02 against ARMA's 0.61 ± 0.02); on PubMed they overlap slightly
   (0.68 ± 0.05 against GCNII's 0.62 ± 0.01).
-* SGC underfits under the shared protocol (Cora 51.04 ± 22.88, Photo 40.89 ± 12.11). In four
-  of five seeds on each of these graphs its best validation epoch is between 1 and 67, so
-  early stopping ends training before the learning rate of 0.005 has moved its single linear
-  layer far; where it runs all 500 epochs (CiteSeer, PubMed, ogbn-arxiv) the best epoch lies
-  in the last 100, i.e. it is still improving. A logistic regression on the same propagated
-  features (rows L2-normalised, regularisation chosen on validation) reaches 80.5% on Cora
-  with the 140 labels of the public split (`artifacts/`, L = 2). The SGC rows reflect the
-  shared optimiser settings rather than SGC.
+* SGC does poorly under the shared protocol (Cora 51.04 ± 22.88, Photo 40.89 ± 12.11). In four
+  of five seeds on each of these graphs training stops 100 epochs after a best validation epoch
+  between 1 and 67 (test accuracy 33.33-55.19 on Cora, 25.38-46.44 on Photo), and the fifth run
+  trains all 500 epochs (80.93 on Cora, 49.84 on Photo). Where it runs all 500 epochs (CiteSeer,
+  PubMed, ogbn-arxiv) the best epoch lies in the last 100, i.e. validation accuracy was still
+  improving when training ended; on PubMed the one early-stopped run reaches 69.08 and the other
+  four 80.75-82.20. A logistic regression on the same propagated features (rows L2-normalised,
+  regularisation chosen on validation) reaches 80.5% on Cora with the 140 labels of the public
+  split (`artifacts/`, L = 2). This points to the shared optimiser settings (learning rate
+  0.005, patience 100) rather than to SGC itself; SGC was not re-run with other settings here.
 * Graph U-Net exceeded the 13 GB budget on Photo and ogbn-arxiv in all five seeds.
 
 ## Fig. 11: number of attention heads (n-HDP-GNN, full supervision, depth 10)
