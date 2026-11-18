@@ -20,6 +20,14 @@
 - `scripts/launch_cluster.sh` ignores comments and blank lines in the host file, tolerates CRLF line ends, can pin
   gloo's network interface (`GLOO_SOCKET_IFNAME`), fails when nothing ran, and is tested with a stand-in `ssh`.
 - The `tests` workflow installs the `figures` extra, so the tests of the demo's figures run on CI.
+- `examples/output/` holds the output of run 44330815122 of the `demo` workflow, copied unchanged (code commit c9540fe,
+  AMD EPYC 9V74 runner, 90 of 90 training runs, 9.9 minutes). `tests/test_committed_outputs.py` checks that it records a
+  workflow run on a clean checkout of a commit in the history and that its tables follow from its JSON and run records;
+  `tests/test_docs_links.py` checks the links of the documents. The `tests` workflow checks out the full history.
+- Demo results on three CPU models: the NumPy sections are identical, the training differs between the two AMD EPYC
+  runs and the Intel Xeon run in 27 of 90 runs (three by more than 20 points), and the two AMD runs agree in all 90.
+  `examples/cpu_comparison.json` holds the per-run values, `scripts/compare_demo_runs.py` makes it, and
+  `examples/README.md` says how to read the demo with this in mind.
 
 ## 2.1.0
 

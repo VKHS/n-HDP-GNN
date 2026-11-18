@@ -84,7 +84,9 @@ Read each row from left to right: the check, the GitHub Actions workflow that ru
   nothing about accuracy; the measured value of every check is in its report.
 - **The demo** (`examples/demo.py`, [examples/README.md](../examples/README.md)) shows what each stage computes on one
   planted graph, against the known truth. The copy in `examples/output/` comes from a run of the `demo` workflow,
-  never from another machine.
+  never from another machine; `tests/test_committed_outputs.py` checks that it records a run of that workflow on a
+  clean checkout of a commit in the history and that its tables follow from its JSON and its run records. The training
+  results of the demo depend on the CPU model of the runner (see [examples/README.md](../examples/README.md)).
 - **Measurement workflows** produce the article's experiments, not a check of correctness: `reproduce` runs a table's
   sweep, `determinism` asks whether a run repeats. See [REPRODUCING.md](REPRODUCING.md).
 

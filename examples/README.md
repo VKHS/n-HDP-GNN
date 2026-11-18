@@ -62,7 +62,24 @@ which run they came from.
 - The training uses the same generic settings for every model. None was tuned, and none is the article's.
 - With a handful of seeds the intervals are wide, and no significance test is reported. A run that fails is listed
   with its reason and is not replaced by a value.
-- The last digits of a number can differ between CPU models
-  ([repeatability](../results/README.md)); the CPU model of the run is in the report.
+- The training results depend on the CPU model. GitHub assigns the CPU of a runner, and the workflow has run three times
+  on three different ones: [44323001112](https://github.com/VKHS/n-HDP-GNN/actions/runs/44323001112) (AMD EPYC 9V45,
+  code commit e137276), [44325763931](https://github.com/VKHS/n-HDP-GNN/actions/runs/44325763931) (Intel Xeon 6975P-C,
+  0717c4d) and [44330815122](https://github.com/VKHS/n-HDP-GNN/actions/runs/44330815122) (AMD EPYC 9V74, c9540fe). Between
+  the commits only `nhdp_gnn/distributed.py`, which the demo does not use, changed. Every number of sections 1 to 4 is
+  the same in the three runs to the last digit; only the timings differ. In section 5 the two AMD runs agree in test
+  accuracy, validation accuracy and best epoch in all 90 training runs, and the Intel run differs from both: in test
+  accuracy in 27 of the 90 runs (4 of 30 at depth 2, 9 of 30 at depth 8, 14 of 30 at depth 32) and in best epoch in 37.
+  Of the 27, 24 differ by 4.2 points or less and three by 23 to 25 points: n-HDP-GNN with the gate off at depth 32, seed 0
+  (65.1% on AMD, 90.1% on Intel), n-HDP-GNN at depth 32, seed 2 (50.0%, 74.5%) and GAT at depth 8, seed 4 (49.5%, 26.0%).
+  The mean over the five seeds differs in 9 of the 18 cells. Three move by 4.6 to 5.3 points: n-HDP-GNN at depth 32 (82.1
+  on AMD, 86.7 on Intel), the same with the gate off (77.0, 82.3) and GAT at depth 8 (56.6, 51.5); six move by 0.1 to
+  0.3 points; APPNP and GCNII at every depth, GCN at depths 2 and 8 and GAT at depth 2 do not move. The leaders are the
+  same on both: n-HDP-GNN has the highest mean at depths 2 and 8, APPNP and GCNII at depth 32, and at depth 32 n-HDP-GNN,
+  with or without the gate, stays above GAT and GCN. A single run of an unstable model (deep n-HDP-GNN, GAT at depth 8)
+  therefore says little, and the means of those cells in the committed output are those of one CPU type. The values of
+  every run are in [`cpu_comparison.json`](cpu_comparison.json), made by
+  [`scripts/compare_demo_runs.py`](../scripts/compare_demo_runs.py). The Cora runs gave the same picture
+  ([repeatability](../results/README.md)): repeats on one CPU model are bit-identical, different CPU models can differ.
 - A probe accuracy that stays flat with depth does not by itself show that the classes stay apart; the centroid gap
   measures how far apart they are. Part 4 of the report shows the measurement behind this statement for the graph it ran on.

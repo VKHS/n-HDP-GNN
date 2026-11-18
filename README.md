@@ -92,8 +92,9 @@ python examples/demo.py   # the full-size demo; it trains six models if PyTorch 
 reports the measured value of every check. A check that cannot run is reported as skipped, never as passed. The `smoke`
 workflow runs it with PyTorch on GitHub's runners. `examples/demo.py` shows what each stage computes on one planted
 graph, against the known truth; the output committed in [`examples/output/`](examples/output/demo.md) comes from a run
-of the `demo` workflow. Neither says anything about accuracy on real graphs; see
-[examples/README.md](examples/README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+of the `demo` workflow; its training results depend on the CPU model of the runner (three runs on three CPU models are
+compared in [examples/README.md](examples/README.md)). Neither the smoke check nor the demo says anything about
+accuracy on real graphs; [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) shows how the repository is checked.
 
 ## Reproducing the article
 

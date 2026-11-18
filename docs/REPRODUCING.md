@@ -145,7 +145,9 @@ For a cluster, `configs/cluster_check.toml` is the equivalent of this check on t
 
 `examples/demo.py` is not a check but a demonstration: one planted graph, every stage against the known truth, and the
 depth with and without training. See [examples/README.md](../examples/README.md); the copy in `examples/output/` comes
-from the `demo` workflow.
+from the `demo` workflow. Its NumPy sections (1 to 4) came out the same on three different CPU models, its training
+section did not: the two AMD EPYC runs agree in all 90 training runs and the Intel run differs from both in 27 of them,
+as the runs on Cora differ between CPU models (above). `examples/cpu_comparison.json` holds the values.
 
 ## Measured artifacts without training
 
