@@ -61,24 +61,27 @@ jobs:
           SEEDS: ${{ inputs.seeds }}
           QUICK: ${{ inputs.quick }}
         run: |
-          # four runs at a time, one per vCPU and one thread each, as in the reproduce workflow
-          args=(--train yes --jobs 4 --seeds "${SEEDS:-5}" --out demo_output --work demo_work)
+          # The output goes to examples/output, where the committed copy lives, so that the links in the report
+          # (relative to its folder) are right as they are; four runs at a time, one per vCPU and one thread each,
+          # as in the reproduce workflow.
+          rm -rf examples/output
+          args=(--train yes --jobs 4 --seeds "${SEEDS:-5}" --out examples/output --work demo_work)
           [ "$QUICK" = "true" ] && args+=(--quick)
           python examples/demo.py "${args[@]}"
       - name: Report in the run summary
         if: always()
         run: |
-          if [ -f demo_output/demo.md ]; then cat demo_output/demo.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -f examples/output/demo.md ]; then cat examples/output/demo.md >> "$GITHUB_STEP_SUMMARY"
           else echo "The demo wrote no report." >> "$GITHUB_STEP_SUMMARY"; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: demo-output
-          path: demo_output/
+          path: examples/output/
           if-no-files-found: ignore
           retention-days: 90
       - name: Publish to branch results/demo
-        if: always() && (github.event_name == 'push' || inputs.publish) && hashFiles('demo_output/demo.md') != ''
+        if: always() && (github.event_name == 'push' || inputs.publish) && hashFiles('examples/output/demo.md') != ''
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -86,7 +89,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           staging=$(mktemp -d)
           mkdir -p "$staging/examples/output"
-          cp demo_output/* "$staging/examples/output/"
+          cp examples/output/* "$staging/examples/output/"
           git checkout -q --orphan publish-demo
           git rm -rfq --ignore-unmatch .
           cp -r "$staging/examples" .

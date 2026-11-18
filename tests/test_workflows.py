@@ -62,6 +62,7 @@ def test_the_demo_workflow_trains_and_publishes_to_the_branch_the_documents_name
     data = load("demo")
     runs = " ".join(s["run"] for s in steps(data) if "run" in s)
     assert "examples/demo.py" in runs and "--train yes" in runs
+    assert "--out examples/output" in runs          # the links in the report are relative to the folder it is written to
     assert "refs/heads/results/demo" in runs and "examples/output" in runs
     uploads = [s["with"] for s in steps(data) if str(s.get("uses", "")).startswith("actions/upload-artifact")]
     assert [u["name"] for u in uploads] == ["demo-output"]
