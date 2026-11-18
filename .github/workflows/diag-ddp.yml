@@ -28,5 +28,21 @@ jobs:
           pip install torch_geometric
           pip install -e .
           python -c "import torch; print('torch', torch.__version__)"; lscpu | grep 'Model name'
+      - name: Install gdb, enable core files
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq gdb
+          mkdir -p /tmp/cores && sudo chmod 777 /tmp/cores
+          sudo sysctl -w kernel.core_pattern=/tmp/cores/core.%p
+          sudo sysctl kernel.core_pattern
       - name: Four ranks, 25 rounds of the old and the new exit
-        run: python diag_ddp.py 4 25 ${{ matrix.shard }}
+        run: |
+          ulimit -c unlimited
+          python diag_ddp.py 4 25 ${{ matrix.shard }}
+      - name: Backtraces of the cores
+        if: always()
+        run: |
+          ls -la /tmp/cores | head -20
+          for c in $(ls /tmp/cores/core.* 2>/dev/null | head -4); do
+            echo "=== $c"
+            gdb -batch -nx -ex "set pagination off" -ex "bt 25" -ex "info threads" -ex "thread apply all bt 12" "$(which python)" "$c" 2>&1 | grep -v "^\[New LWP\|^warning: \|^Missing separate" | head -150
+          done
