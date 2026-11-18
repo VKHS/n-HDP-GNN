@@ -276,3 +276,29 @@ def test_the_trained_figure_draws_the_seeds_and_no_interval_past_one_hundred_per
     assert not any(type(c).__name__ == "ErrorbarContainer" for ax in drawn[0] for c in ax.containers)
     dots = [line for line in accuracy_axes.get_lines() if line.get_marker() == "o" and line.get_linestyle() == "None"]
     assert len(dots) == len(demo.VARIANTS) * len(depths) and all(len(line.get_xdata()) == 5 for line in dots)
+
+
+CI_VARIABLES = {"GITHUB_ACTIONS": "true", "GITHUB_WORKFLOW": "demo", "GITHUB_EVENT_NAME": "push",
+                "GITHUB_REF": "refs/heads/demo/x", "GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123456789",
+                "GITHUB_RUN_ATTEMPT": "1", "GITHUB_SERVER_URL": "https://github.com", "GITHUB_REPOSITORY": "VKHS/n-HDP-GNN"}
+
+
+def test_a_run_in_github_actions_records_which_run_and_a_local_run_says_nothing(demo, tmp_path, monkeypatch):
+    for key in CI_VARIABLES:
+        monkeypatch.delenv(key, raising=False)
+    assert demo.ci_run() is None
+    local = tmp_path / "local"
+    assert demo.main(["--quick", "--train", "no", "--no-figures", "--out", str(local), "--work", str(tmp_path / "w")]) == 0
+    report, doc = load(local)
+    assert doc["ci"] is None and "GitHub Actions" not in report
+    for key, value in CI_VARIABLES.items():
+        monkeypatch.setenv(key, value)
+    assert demo.ci_run() == {"workflow": "demo", "event": "push", "ref": "refs/heads/demo/x", "sha": "a" * 40,
+                             "run_id": "123456789", "run_attempt": "1",
+                             "run_url": "https://github.com/VKHS/n-HDP-GNN/actions/runs/123456789"}
+    ci = tmp_path / "ci"
+    assert demo.main(["--quick", "--train", "no", "--no-figures", "--out", str(ci), "--work", str(tmp_path / "w2")]) == 0
+    report, doc = load(ci)
+    assert doc["ci"]["run_url"] == "https://github.com/VKHS/n-HDP-GNN/actions/runs/123456789"
+    assert ("It ran in the GitHub Actions workflow `demo` ([run 123456789]"
+            "(https://github.com/VKHS/n-HDP-GNN/actions/runs/123456789)).") in report.splitlines()[2]
