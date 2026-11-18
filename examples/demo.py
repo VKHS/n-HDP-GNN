@@ -526,8 +526,9 @@ def build_report(ctx: dict) -> str:
          "It shows what each stage computes and how the pieces behave. It is a demonstration of the mechanics, not "
          f"evidence about accuracy on real graphs: {repo_link('results/README.md', 'results/README.md', out)} and "
          f"{repo_link('artifacts/README.md', 'artifacts/README.md', out)} have those. Every number below was computed by "
-         "the script that generated this file; the values in the last digits can differ between CPU models "
-         f"({repo_link('results/README.md', 'results/README.md', out)}, repeatability).", "",
+         "the script that generated this file. Sections 1 to 4 are computed without PyTorch. Training (section 5) can give "
+         "different values on another CPU model, in unstable cells (deep models) by many points "
+         f"({repo_link('examples/README.md', 'examples/README.md', out)}, how to read it).", "",
          "## 1. The graph", ""]
     L += md_table(["", ""], [
         ["nodes / undirected edges", f"{facts['nodes']} / {facts['edges']} (average degree {facts['average_degree']:.1f})"],
@@ -670,8 +671,8 @@ def build_report(ctx: dict) -> str:
               "the tables above. The dashed line in panel (a) is the accuracy of choosing one class at random.", ""]
         cpus = sorted({r["environment"].get("cpu_model") for r in tr["results"] if r.get("environment")} - {None})
         if len(cpus) > 1:
-            L += [f"The runs were made on more than one CPU model ({'; '.join(cpus)}); results can differ in the "
-                  "last digits between them.", ""]
+            L += [f"The runs were made on more than one CPU model ({'; '.join(cpus)}); the same run can give different "
+                  "values on different CPU models, so the cells mix them.", ""]
     L += ["## Provenance", "",
           f"`{ctx['command']}`; code commit {commit}; {env.get('platform')}; {env.get('cpu_count')} CPUs; "
           f"scipy {env['packages'].get('scipy')}, scikit-learn {env['packages'].get('scikit-learn')}, "
