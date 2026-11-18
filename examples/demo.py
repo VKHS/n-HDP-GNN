@@ -3,7 +3,7 @@
 
     python examples/demo.py                  # report, figures and JSON in runs/demo/output/
     python examples/demo.py --train no       # stages A and B and the training-free depth study (numpy only)
-    python examples/demo.py --quick          # a smaller graph, fewer depths, seeds and epochs (about a minute)
+    python examples/demo.py --quick          # a smaller graph, fewer depths, seeds and epochs
     python examples/demo.py --jobs 4         # train four runs at a time
     python examples/demo.py --out DIR --work DIR
 

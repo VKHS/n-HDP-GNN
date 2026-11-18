@@ -1,8 +1,8 @@
 # Common tasks.  Examples:
 #   make test
 #   make smoke                             # seconds, no PyTorch: stages A and B, gate, partition, depth study
-#   make smoke-full                        # minutes, needs PyTorch: every model, sweep runner, DDP, tables
-#   make demo-quick                        # about a minute: the demo on a small graph, in runs/demo-quick/
+#   make smoke-full                        # needs PyTorch: every model, sweep runner, DDP, tables
+#   make demo-quick                        # the demo on a small graph, in runs/demo-quick/
 #   make artifacts figures                 # measured stage A/B artifacts and their figures (no PyTorch)
 #   make sweep-table1_ablation tables-table1_ablation
 PY ?= python

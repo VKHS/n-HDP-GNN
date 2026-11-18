@@ -28,7 +28,7 @@ gnn = ["torch>=2.3", "torch_geometric>=2.6"]
 ogb = ["ogb>=1.3.6"]
 fast = ["pymetis>=2023.1", "igraph>=0.10"]
 figures = ["matplotlib>=3.7"]
-test = ["pytest>=7"]
+test = ["pytest>=7", "pyyaml>=6"]
 
 [project.urls]
 Article = "https://doi.org/10.1007/s11227-025-08017-9"

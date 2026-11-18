@@ -84,7 +84,7 @@ def test_the_netplan_example_is_valid_and_inside_the_subnet():
     address = re.search(r"addresses: \[([0-9./]+)\]", block).group(1)
     assert ipaddress.ip_interface(address).ip == ipaddress.ip_address("192.168.100.11")       # worker 01, rank 0
     assert ipaddress.ip_interface(address).network == SUBNET
-    yaml = pytest.importorskip("yaml")
+    import yaml                                    # in the test extra: a missing module must not skip this check
     parsed = yaml.safe_load(block)
     assert parsed["network"]["ethernets"]["eno1"]["addresses"] == [address]
 

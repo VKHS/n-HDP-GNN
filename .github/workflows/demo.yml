@@ -16,7 +16,7 @@ on:
         description: "seeds per training cell"
         default: "5"
       quick:
-        description: "the small graph, fewer depths and seeds (a few minutes)"
+        description: "the small graph, fewer depths, seeds and epochs"
         type: boolean
         default: false
       publish:
