@@ -225,13 +225,25 @@ def worker(cfg: RunConfig) -> dict | None:
     return result
 
 
+def run_and_leave(cfg: RunConfig) -> None:
+    """Run ``worker`` in the current process group and leave the group.
+
+    After a successful run every rank waits at a barrier before any rank destroys the group, so that no rank exits
+    while another is still using the group: every rank but 0 returns from ``worker`` as soon as its last collective
+    is done, while rank 0 still writes the result.  After an exception the barrier is skipped, because the other ranks
+    may be waiting in a collective that this rank will never join.
+    """
+    try:
+        worker(cfg)
+        dist.barrier()
+    finally:
+        dist.destroy_process_group()
+
+
 def _local_entry(rank: int, world: int, port: int, cfg_dict: dict) -> None:
     os.environ.update(MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port))
     dist.init_process_group("gloo", rank=rank, world_size=world)
-    try:
-        worker(config_from_dict(cfg_dict))
-    finally:
-        dist.destroy_process_group()
+    run_and_leave(config_from_dict(cfg_dict))
 
 
 def _free_port() -> int:
@@ -250,10 +262,7 @@ def spawn_local(cfg: RunConfig, world: int = 2, port: int | None = None) -> None
 def main(argv=None) -> None:
     cfg = parse_args(argv)
     dist.init_process_group(backend=os.environ.get("NHDP_DIST_BACKEND", "gloo"))
-    try:
-        worker(cfg)
-    finally:
-        dist.destroy_process_group()
+    run_and_leave(cfg)
 
 
 if __name__ == "__main__":
