@@ -1,0 +1,82 @@
+name: smoke
+
+# A fast end-to-end check of the whole pipeline on a small planted graph (scripts/smoke.py): stages A and B,
+# the gate, the partitioner and the training-free depth study; then, with PyTorch, the trainer, every model
+# through the sweep runner, the worker pool, resuming, the table builder, a two-part run, two-rank
+# DistributedDataParallel training and the time-limit failure record.  No dataset is needed (the optional
+# `real` input adds Cora).  A skipped check is not a pass: at --level full a missing PyTorch fails.
+#
+# It runs on pushes to main that change code, on pull requests, on any push to a branch named smoke/**,
+# and by hand (Actions tab -> "smoke" -> "Run workflow").  The measured value of every check is in the
+# run summary and in the artifact "smoke-report"; the numeric floors are sanity bounds, not accuracy claims.
+
+on:
+  push:
+    branches: [main, "smoke/**"]
+    paths-ignore: ["**.md", "docs/**", "results/**", "artifacts/**", "examples/output/**"]
+  pull_request:
+    paths-ignore: ["**.md", "docs/**", "results/**", "artifacts/**", "examples/output/**"]
+  workflow_dispatch:
+    inputs:
+      real:
+        description: "also run the checks on real data (Cora, downloaded)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torch_geometric
+          pip install -e .
+          python -c "import torch, torch_geometric; print('torch', torch.__version__, 'pyg', torch_geometric.__version__)"
+      - uses: actions/cache@v4
+        if: inputs.real
+        with:
+          path: data
+          key: datasets-v1-${{ hashFiles('nhdp_gnn/data.py') }}
+          restore-keys: datasets-v1-
+      - name: Machine
+        run: lscpu | grep -E 'Model name|^CPU\(s\)|Vendor'
+      - name: Smoke checks
+        env:
+          REAL: ${{ inputs.real }}
+        run: |
+          args=(--level full --out smoke-check)
+          [ "$REAL" = "true" ] && args+=(--real)
+          python scripts/smoke.py "${args[@]}"
+      - name: Report in the run summary
+        if: always()
+        run: |
+          if [ -f smoke-check/report.md ]; then cat smoke-check/report.md >> "$GITHUB_STEP_SUMMARY"
+          else echo "The smoke script wrote no report." >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-report
+          path: |
+            smoke-check/report.md
+            smoke-check/report.json
+          if-no-files-found: ignore
+          retention-days: 30

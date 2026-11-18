@@ -1,0 +1,35 @@
+# Smoke sweep: every model, two depths, two seeds, on a small planted hierarchical graph
+# (no download, no real data).  It checks that the whole path runs -- stages A and B, the
+# model, training with early stopping, the embedding diagnostics, the result JSON, the sweep
+# runner and the table builder -- and it says nothing about accuracy: 15 epochs on 270 nodes.
+#
+#   python scripts/smoke.py                 # runs this sweep (and the other checks) and verifies the records
+#   python -m nhdp_gnn.sweep configs/smoke.toml
+#   python scripts/make_tables.py configs/smoke.toml --out runs/smoke-tables
+#
+# Needs PyTorch and PyTorch Geometric; without them scripts/smoke.py runs only the checks that
+# do not train and lists the others as skipped.
+name = "smoke"
+
+[base]
+dataset = "synthetic"
+synthetic = { num_super = 3, comm_per_super = 3, nodes_per_comm = 30, seed = 0, class_alignment = 0.9 }
+regime = "full"
+hidden = 16
+heads = 2
+epochs = 15
+patience = 50
+lr = 0.01
+weight_decay = 5e-4
+nhdp_K = 12
+nhdp_T1 = 4
+nhdp_T2 = 3
+nhdp_max_iter = 20
+madgap_sources = 64
+threads = 1
+cache_dir = "runs/smoke/cache"
+
+[grid]
+model = ["nhdp", "gcn", "gat", "sgc", "appnp", "arma", "gcnii", "pairnorm", "dropedge", "graphunet"]
+depth = [2, 4]
+seed = [0, 1]

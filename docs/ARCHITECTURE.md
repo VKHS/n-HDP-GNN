@@ -66,3 +66,27 @@ the data and broadcasts the edge cut, every rank runs the stages on its own part
 gradients are all-reduced, and rank 0 writes the result. [CLUSTER.md](CLUSTER.md) has the details, an example
 addressing plan (marked as an example, because the article gives no addresses) and the tool that records the real
 inventory of the machines.
+
+## 6. How the repository is checked
+
+![Three checks, each with the workflow that runs it on GitHub and what it leaves behind, and the two measurement workflows](diagrams/verification.svg)
+
+Read each row from left to right: the check, the GitHub Actions workflow that runs it, and what a run leaves behind.
+
+- **Unit tests** (`pytest`) check the parts one by one against what their tests expect. Locally the tests that need
+  PyTorch are skipped and reported as skipped, which is not a pass; the `tests` workflow installs PyTorch, so it is
+  where they run.
+- **The smoke check** (`scripts/smoke.py`, [configs/smoke.toml](../configs/smoke.toml)) runs the whole pipeline end to
+  end on a 270-node planted graph. At the `numpy` level it needs no PyTorch and takes seconds; at the `full` level
+  it also runs the trainer, every model through the sweep runner, the worker pool, resuming, the table builder, a
+  two-part run, two-rank DDP training and the time-limit failure record, and a missing PyTorch fails it. The numeric
+  floors in its checks are sanity bounds well below what the graph gives, so they catch a broken pipeline and say
+  nothing about accuracy; the measured value of every check is in its report.
+- **The demo** (`examples/demo.py`, [examples/README.md](../examples/README.md)) shows what each stage computes on one
+  planted graph, against the known truth. The copy in `examples/output/` comes from a run of the `demo` workflow,
+  never from another machine.
+- **Measurement workflows** produce the article's experiments, not a check of correctness: `reproduce` runs a table's
+  sweep, `determinism` asks whether a run repeats. See [REPRODUCING.md](REPRODUCING.md).
+
+A passing smoke check or demo says that the pipeline runs and behaves as described on a synthetic graph. It is not
+evidence about accuracy on real graphs; that comes from the sweeps in [results/](../results/README.md).

@@ -1,0 +1,62 @@
+flowchart TB
+  classDef chk fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef gh fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef out fill:#efe9f7,stroke:#7a54b0,color:#0b0b0b
+
+  subgraph R1["Unit tests  ·  each part against what its tests expect"]
+    direction LR
+    PT("`**pytest**  ·  make test
+unit tests, tests of the scripts,
+of the module layers and of the diagrams;
+tests that need PyTorch are skipped without it`"):::chk
+    TW("`**tests.yml**
+pull requests and every push except to
+reproduce/** and results/**, with PyTorch`"):::gh
+    E1("`job log: tests passed, failed
+and skipped, with the reasons`"):::out
+    PT --> TW --> E1
+  end
+
+  subgraph R2["Smoke check  ·  does the whole pipeline run end to end, in minutes"]
+    direction LR
+    SM("`**scripts/smoke.py**  ·  make smoke, make smoke-full
+numpy level: 7 checks, no PyTorch, seconds
+full level: 16 checks, with PyTorch: the trainer, every model,
+worker pool, resuming, tables, two parts, two-rank DDP, time limit`"):::chk
+    SW("`**smoke.yml**
+main, smoke/**, pull requests, by hand
+(full level)`"):::gh
+    E2("`run summary and artifact smoke-report:
+report.md and report.json, with the
+measured value of every check`"):::out
+    SM --> SW --> E2
+  end
+
+  subgraph R3["Demo  ·  what each stage computes, against a known truth"]
+    direction LR
+    DM("`**examples/demo.py**  ·  make demo, make demo-quick
+one planted graph: stages A and B against the truth,
+depth without training, six models trained`"):::chk
+    DW("`**demo.yml**
+demo/**, by hand
+(training on the runner)`"):::gh
+    E3("`artifact demo-output and branch results/demo;
+its files are copied to examples/output/`"):::out
+    DM --> DW --> E3
+  end
+
+  subgraph R4["Measurement workflows  ·  results of the article's experiments, see REPRODUCING.md"]
+    direction LR
+    RW("`**reproduce.yml**
+one table's sweep on the runners`"):::gh
+    RE("`branch results/‹sweep›:
+records and tables`"):::out
+    DT("`**determinism.yml**
+does a run repeat, and across CPUs`"):::gh
+    DE("`job log: which repeats
+and variants agree`"):::out
+    RW --> RE
+    DT --> DE
+  end
+
+  R1 ~~~ R2 ~~~ R3 ~~~ R4

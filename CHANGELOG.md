@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- Smoke check: `scripts/smoke.py` and `configs/smoke.toml` run the whole pipeline on a 270-node planted hierarchical
+  graph and report the measured value of every check. `--level numpy` (7 checks, no PyTorch, seconds) and `--level
+  full` (16 checks: trainer, every model through the sweep runner, worker pool, resuming, tables, two parts, two-rank
+  DDP, time limit); `--real` adds Cora. A check that cannot run is reported as skipped, and a missing PyTorch fails
+  the full level. The `smoke` workflow runs the full level on GitHub's runners.
+- Demo: `examples/demo.py` runs the stages on one planted graph against its known truth (stage A, stage B and the
+  gate, the training-free depth study with a linear probe and the centroid gap, six models trained at several depths)
+  and writes a report, figures and JSON. The `demo` workflow runs it with training on a runner and publishes the output
+  to the branch `results/demo`. `make smoke`, `make smoke-full`, `make demo`, `make demo-quick`, `make diagrams`.
+- Block diagrams in `docs/diagrams/` (Mermaid sources and SVGs rendered by `scripts/make_diagrams.py`) shown in
+  `docs/ARCHITECTURE.md`: the pipeline, one layer, the modules and their layers (checked against the imports by a
+  test), the experiments, the cluster, a distributed run and the checks.
+- `docs/CLUSTER.md`: what the article states about the 14-node platform and what it leaves out, an example addressing
+  plan (marked as an example), the preparation and checks of a new cluster, and `scripts/cluster_inventory.py`, which
+  records the inventory the machines report about themselves. `configs/cluster_check.toml` and `configs/hosts.example.txt`.
+- `scripts/launch_cluster.sh` ignores comments and blank lines in the host file, tolerates CRLF line ends, can pin
+  gloo's network interface (`GLOO_SOCKET_IFNAME`), fails when nothing ran, and is tested with a stand-in `ssh`.
+- The `tests` workflow installs the `figures` extra, so the tests of the demo's figures run on CI.
+
 ## 2.1.0
 
 - `nhdp_gnn.sweep --workers N`: every run executes in a process of its own, N at a time, within a

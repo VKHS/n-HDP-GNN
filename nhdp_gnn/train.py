@@ -16,7 +16,7 @@ best_epoch + patience, and no later epoch is assumed faster than the fastest so 
 If the selected model's outputs are not finite (training diverged), ``run`` raises
 ``TrainingDiverged`` instead of reporting metrics computed from them.
 
-    python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/demo
+    python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/cora
     python -m nhdp_gnn.train --config configs/example.toml --seed 3
 """
 from __future__ import annotations

@@ -28,6 +28,10 @@
     "reproduction": {
       "source_sha256": "0dd2069edaa12f24e04097e62d7106782dc8cc42ead2b66003356085b0aa2351",
       "svg_sha256": "de0dc6945f49b99a6d0c7eb9f0fe3b663242aaefda664801b309e40d6a69c107"
+    },
+    "verification": {
+      "source_sha256": "4c773e7264a7860a0d78090793b9c47863e02dcf2ad1507f3c3ffb36474449d4",
+      "svg_sha256": "a51fbd2a90d8208df8ebdcf7b11a0347095e5f8ea153cdc2c54733cc4272dd8d"
     }
   },
   "mermaid_cli": "11.16.0"

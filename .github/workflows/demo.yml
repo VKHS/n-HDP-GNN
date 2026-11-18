@@ -1,0 +1,95 @@
+name: demo
+
+# Runs examples/demo.py with training on a GitHub-hosted CPU runner: one planted hierarchical graph, stages A
+# and B against the planted truth, the training-free depth study, and six models trained at several depths
+# (5 seeds each).  The report, figures and JSON are uploaded as the artifact "demo-output" and, if publish is
+# on, pushed to the branch results/demo under examples/output/, which is where the committed copy in the
+# repository comes from: nothing in it is typed in or produced on another machine.
+#
+# Start it by hand (Actions tab -> "demo" -> "Run workflow") or push any commit to a branch named demo/**
+# (the defaults below apply; the branch results/demo is overwritten with the output of the latest run).
+
+on:
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: "seeds per training cell"
+        default: "5"
+      quick:
+        description: "the small graph, fewer depths and seeds (a few minutes)"
+        type: boolean
+        default: false
+      publish:
+        description: "push the output to branch results/demo"
+        type: boolean
+        default: true
+  push:
+    branches: ["demo/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torch_geometric
+          pip install -e ".[figures]"
+          python -c "import torch, torch_geometric; print('torch', torch.__version__, 'pyg', torch_geometric.__version__)"
+      - name: Machine
+        run: lscpu | grep -E 'Model name|^CPU\(s\)|Vendor'
+      - name: Demo
+        env:
+          SEEDS: ${{ inputs.seeds }}
+          QUICK: ${{ inputs.quick }}
+        run: |
+          # four runs at a time, one per vCPU and one thread each, as in the reproduce workflow
+          args=(--train yes --jobs 4 --seeds "${SEEDS:-5}" --out demo_output --work demo_work)
+          [ "$QUICK" = "true" ] && args+=(--quick)
+          python examples/demo.py "${args[@]}"
+      - name: Report in the run summary
+        if: always()
+        run: |
+          if [ -f demo_output/demo.md ]; then cat demo_output/demo.md >> "$GITHUB_STEP_SUMMARY"
+          else echo "The demo wrote no report." >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-output
+          path: demo_output/
+          if-no-files-found: ignore
+          retention-days: 90
+      - name: Publish to branch results/demo
+        if: always() && (github.event_name == 'push' || inputs.publish) && hashFiles('demo_output/demo.md') != ''
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          staging=$(mktemp -d)
+          mkdir -p "$staging/examples/output"
+          cp demo_output/* "$staging/examples/output/"
+          git checkout -q --orphan publish-demo
+          git rm -rfq --ignore-unmatch .
+          cp -r "$staging/examples" .
+          git add examples/output
+          git commit -q -m "Output of examples/demo.py: $RUN_URL ($GITHUB_SHA)"
+          git push -q --force origin HEAD:refs/heads/results/demo

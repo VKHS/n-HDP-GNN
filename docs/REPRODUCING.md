@@ -126,6 +126,27 @@ with a segmentation fault on AMD EPYC 9V45, and the `pinned` selection of the fi
 on EPYC 9V74, so do not pin it on such machines. To reproduce a run bit for bit, use the same CPU
 model; the `environment` of every run records it.
 
+## Smoke runs and the demo
+
+Before a long sweep, `python scripts/smoke.py` checks that the whole chain runs on a small planted graph
+([configs/smoke.toml](../configs/smoke.toml): 270 nodes, no download). `--level numpy` (seconds, no PyTorch) covers
+stages A and B, the gate, the partitioner, the training-free depth study and the `nhdp_gnn.artifacts` command.
+`--level full` (a missing PyTorch fails it) adds `nhdp_gnn.train`, every model through `nhdp_gnn.sweep` (which also
+exercises the worker pool, resuming and `scripts/make_tables.py`), a two-part run, two-rank DistributedDataParallel
+training on one machine and the time-limit failure record; `--real` adds Cora. `--only graph,stage_b` selects checks and
+`--list` names them. A check that cannot run is reported as skipped, never as passed. The report
+(`runs/smoke-check/report.md` and `report.json`) holds the measured value of every check; the numeric floors are sanity
+bounds well below what the graph gives, so they catch a broken pipeline and say nothing about accuracy. The `smoke`
+workflow runs the full level on a GitHub runner (pushes to `main`, pull requests, branches named `smoke/**`, by hand)
+and shows the report in the run summary. `make smoke` and `make smoke-full` are the same commands.
+
+For a cluster, `configs/cluster_check.toml` is the equivalent of this check on the real machines
+([CLUSTER.md](CLUSTER.md), section 7).
+
+`examples/demo.py` is not a check but a demonstration: one planted graph, every stage against the known truth, and the
+depth with and without training. See [examples/README.md](../examples/README.md); the copy in `examples/output/` comes
+from the `demo` workflow.
+
 ## Measured artifacts without training
 
 `python -m nhdp_gnn.artifacts` (numpy only) measures stages A and B, the partition
@@ -167,6 +188,8 @@ come from `nhdp_gnn.splits.regime_split`.
 
 ## Hardware notes
 
+* The platform of Tables 9-12 (14 worker nodes, a master host, a 1 GbE switch), an example addressing plan and the tool
+  that records the real inventory of the machines are in [CLUSTER.md](CLUSTER.md).
 * `pip install pymetis` enables METIS partitions (otherwise BFS chunks are used).
 * `pip install igraph` makes Louvain fast enough for ogbn-products.
 * `ogb_depth.toml` trains ogbn-products in 16 parts on one node. The distributed

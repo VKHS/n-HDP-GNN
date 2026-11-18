@@ -23,7 +23,10 @@ CPU clusters.
 | Diagnostics: MADGap, centroid gap, k-means NMI/ARI, ρ, r_E | Sects. 8, 9, 10 | `metrics.py`, `gating.py` |
 | Baselines: GCN, GAT, SGC, APPNP, ARMA, GCNII, PairNorm, DropEdge, Graph U-Net | Sect. 8 | `baselines.py` |
 
-[docs/METHOD.md](docs/METHOD.md) gives:
+![The pipeline from the graph to the result record: input, stage A, stage B, batches, model, training and result](docs/diagrams/pipeline.svg)
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the block diagrams of the layer, the modules, the experiments, the
+cluster and the checks. [docs/METHOD.md](docs/METHOD.md) gives:
 
 - every update equation;
 - the mapping from the article's symbols to code;
@@ -49,10 +52,10 @@ stages A and B run without PyTorch.
 
 ```bash
 # Cora, public Planetoid split, depth 8
-python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/demo
+python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --out_dir runs/cora
 
 # a baseline under the same protocol
-python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --model gcnii --out_dir runs/demo
+python -m nhdp_gnn.train --dataset cora --regime semi --depth 8 --model gcnii --out_dir runs/cora
 
 # structure diagnostics without training: purity bounds, gate selectivity, rho, r_E
 python scripts/regime_report.py --datasets cora citeseer --parts 14
@@ -75,6 +78,22 @@ Each run writes `<out_dir>/<key>.json` containing:
 - the training curve.
 
 `--save_embeddings true` also stores the hidden representation of every layer and the logits as `.npy` files.
+
+## Smoke check and demo
+
+```bash
+make smoke          # seconds, no PyTorch: stages A and B, the gate, the partitioner, the depth study
+make smoke-full     # with PyTorch: also the trainer, every model through the sweep runner, DDP, the tables
+make demo-quick     # the demo on a small planted graph, in runs/demo-quick/output/
+python examples/demo.py   # the full-size demo; it trains six models if PyTorch is installed
+```
+
+`scripts/smoke.py` runs the whole pipeline on a 270-node planted hierarchical graph that needs no download, and
+reports the measured value of every check. A check that cannot run is reported as skipped, never as passed. The `smoke`
+workflow runs it with PyTorch on GitHub's runners. `examples/demo.py` shows what each stage computes on one planted
+graph, against the known truth; the output committed in [`examples/output/`](examples/output/demo.md) comes from a run
+of the `demo` workflow. Neither says anything about accuracy on real graphs; see
+[examples/README.md](examples/README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Reproducing the article
 
@@ -115,15 +134,22 @@ HOSTFILE=hosts.txt scripts/launch_cluster.sh configs/hpc_products.toml    # worl
 python -m nhdp_gnn.report runs/hpc --scaling                               # S(p), E(p), Comms%, bytes/step
 ```
 
+The article's platform is 14 HP ProDesk worker nodes, a master and launcher host and a 24-port Gigabit Ethernet
+switch. [docs/CLUSTER.md](docs/CLUSTER.md) gives what the article states about it and what it leaves out (it gives
+no model numbers or addresses), an example addressing plan for building a cluster of that shape, the checks to run on
+a new cluster (`configs/cluster_check.toml`) and `scripts/cluster_inventory.py`, which records the real inventory of
+the machines.
+
 ## Tests
 
 ```bash
 pytest -q
 ```
 
-GitHub Actions runs the full suite on every push.
+GitHub Actions runs the full suite, with PyTorch, on pull requests and on every push except to `reproduce/**` and
+`results/**`, and the smoke check on pushes to `main`, on pull requests and on branches named `smoke/**`.
 
-- Without PyTorch, the inference, gating, partitioning, metric, split, sweep and report tests still run; the model, trainer and DDP tests are skipped.
+- Without PyTorch, the inference, gating, partitioning, metric, split, sweep and report tests still run; the model, trainer and DDP tests are skipped, and a skipped test is reported as skipped, not as passed.
 - The n-HDP tests check that the ELBO is monotone, that planted clusters are recovered, and that sharded and multi-rank inference reproduce the single-process result.
 
 ## Repository history
