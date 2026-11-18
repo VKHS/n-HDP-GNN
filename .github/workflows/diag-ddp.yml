@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     env:
       OMP_NUM_THREADS: "1"
       PYTHONFAULTHANDLER: "1"
@@ -34,7 +34,7 @@ jobs:
           mkdir -p /tmp/cores && sudo chmod 777 /tmp/cores
           sudo sysctl -w kernel.core_pattern=/tmp/cores/core.%p
           sudo sysctl kernel.core_pattern
-      - name: Four ranks, 25 rounds of the old and the new exit
+      - name: Four ranks, 25 rounds of four ways to leave
         run: |
           ulimit -c unlimited
           python diag_ddp.py 4 25 ${{ matrix.shard }}
@@ -42,7 +42,7 @@ jobs:
         if: always()
         run: |
           ls -la /tmp/cores | head -20
-          for c in $(ls /tmp/cores/core.* 2>/dev/null | head -4); do
+          for c in $(ls /tmp/cores/core.* 2>/dev/null | head -2); do
             echo "=== $c"
             gdb -batch -nx -ex "set pagination off" -ex "bt 25" -ex "info threads" -ex "thread apply all bt 12" "$(which python)" "$c" 2>&1 | grep -v "^\[New LWP\|^warning: \|^Missing separate" | head -150
           done

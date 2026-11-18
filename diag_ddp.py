@@ -1,7 +1,13 @@
 """Temporary diagnostic (branch diag/ddp-barrier-confirm only): how often does a 4-rank spawn_local run abort at exit
-with the previous exit sequence ("old": run the worker, destroy the group) and with the shipped one ("new":
-nhdp_gnn.distributed._local_entry, which waits at a barrier before destroying the group)?  The two variants are
-interleaved trial by trial and the order alternates from round to round."""
+(SIGABRT while the interpreter shuts down), for four ways of leaving the run?
+
+  old      run the worker, destroy the process group                        (the code before the barrier)
+  barrier  run the worker, wait at a barrier, destroy the process group     (nhdp_gnn.distributed._local_entry)
+  sleep    as barrier, then sleep half a second before the process ends
+  exit     as barrier, then flush and end the process with os._exit(0), without interpreter shutdown
+
+The variants are interleaved trial by trial and the order rotates from round to round.  In round 0 an extra trial
+prints how many threads a rank has after each step (DIAG_PROBE)."""
 import collections
 import os
 import sys
@@ -20,21 +26,58 @@ from nhdp_gnn.config import config_from_dict
 CONFIG = Path("configs/cluster_check.toml")
 
 
-def entry_old(rank, world, port, cfg_dict):
-    """The exit sequence before the barrier was added: the same code, written out."""
+def threads() -> int:
+    return len(os.listdir("/proc/self/task"))
+
+
+def probe(rank, label):
+    if os.environ.get("DIAG_PROBE") and rank == 1:
+        print(f"PROBE rank 1 {label}: {threads()} threads", flush=True)
+
+
+def _start(rank, world, port, cfg_dict):
     os.environ.update(MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port))
+    probe(rank, "before init")
     dist.init_process_group("gloo", rank=rank, world_size=world)
+    probe(rank, "after init")
+    return config_from_dict(cfg_dict)
+
+
+def entry_old(rank, world, port, cfg_dict):
+    cfg = _start(rank, world, port, cfg_dict)
     try:
-        D.worker(config_from_dict(cfg_dict))
+        D.worker(cfg)
+        probe(rank, "after worker")
     finally:
         dist.destroy_process_group()
+        probe(rank, "after destroy")
 
 
-def entry_new(rank, world, port, cfg_dict):
-    D._local_entry(rank, world, port, cfg_dict)
+def entry_barrier(rank, world, port, cfg_dict):
+    cfg = _start(rank, world, port, cfg_dict)
+    try:
+        D.worker(cfg)
+        probe(rank, "after worker")
+        dist.barrier()
+        probe(rank, "after barrier")
+    finally:
+        dist.destroy_process_group()
+        probe(rank, "after destroy")
 
 
-VARIANTS = {"old": entry_old, "new": entry_new}
+def entry_sleep(rank, world, port, cfg_dict):
+    entry_barrier(rank, world, port, cfg_dict)
+    time.sleep(0.5)
+
+
+def entry_exit(rank, world, port, cfg_dict):
+    entry_barrier(rank, world, port, cfg_dict)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
+
+
+VARIANTS = {"old": entry_old, "barrier": entry_barrier, "sleep": entry_sleep, "exit": entry_exit}
 
 
 def trial(entry, world):
@@ -50,11 +93,15 @@ def trial(entry, world):
 
 if __name__ == "__main__":
     world, n, shard = int(sys.argv[1]), int(sys.argv[2]), sys.argv[3] if len(sys.argv) > 3 else "-"
+    os.environ["DIAG_PROBE"] = "1"
+    print(f"probe trial: {trial(entry_barrier, world)}", flush=True)
+    del os.environ["DIAG_PROBE"]
     tally = {name: collections.Counter() for name in VARIANTS}
+    names = list(VARIANTS)
     t0 = time.time()
     for i in range(n):
-        names = list(VARIANTS) if i % 2 == 0 else list(VARIANTS)[::-1]
-        for name in names:
+        order = names[i % len(names):] + names[:i % len(names)]
+        for name in order:
             result = trial(VARIANTS[name], world)
             tally[name][result] += 1
             if result != "ok":
