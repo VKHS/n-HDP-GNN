@@ -177,3 +177,6 @@ cython_debug/
 runs/
 cache/
 data/
+
+# the real host list of a cluster (configs/hosts.example.txt is the template)
+/hosts.txt

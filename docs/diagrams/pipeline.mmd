@@ -1,0 +1,90 @@
+flowchart TB
+  classDef data fill:#f1f0ec,stroke:#8a8985,color:#0b0b0b
+  classDef sa fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef sb fill:#fdf1d6,stroke:#c98a00,color:#0b0b0b
+  classDef sc fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef out fill:#efe9f7,stroke:#7a54b0,color:#0b0b0b
+  classDef cache fill:#fcfcfb,stroke:#52514e,color:#0b0b0b,stroke-dasharray: 4 3
+
+  subgraph IN["Input"]
+    direction LR
+    G("`Graph G = (V, E),
+features X, labels y
+*data.load_dataset*`"):::data
+    SP("`Supervision regime
+full, semi or scarce
+*splits.regime_split*`"):::data
+    G ~~~ SP
+  end
+
+  subgraph SA["Stage A  ·  numpy, networkx"]
+    direction LR
+    P("`Edge cut into p parts
+metis, community, bfs or random
+*partition.partition_nodes*`"):::sa
+    L("`Nested Louvain inside each part
+communities within super-communities
+*communities.nested_communities*`"):::sa
+    P --> L
+  end
+
+  subgraph SB["Stage B  ·  numpy, scipy"]
+    direction LR
+    Z("`32-d SVD of the
+standardised features
+*nhdp.reduce_features*`"):::sb
+    N("`Nested HDP, mean-field CAVI
+exact ELBO, monotone
+*nhdp.fit_nhdp*`"):::sb
+    T("`Top-k responsibilities π
+k = 4, rows sum to 1
+*nhdp.topk_responsibilities*`"):::sb
+    CA[("`stages_*.npz
+cache shared by all
+depths and models`")]:::cache
+    Z --> N --> T -.-> CA
+  end
+
+  subgraph BT["Batches  ·  numpy, then torch tensors"]
+    direction LR
+    IS("`Induced subgraph per part
+cut edges are not propagated
+*pipeline.build_batches*`"):::sc
+    GO("`Gate g_ij = ⟨π_i, π_j⟩ on every edge
+operator P_ij = Â_ij · g_ij
+*gating.gate_weights*`"):::sc
+    SN("`Soft assignment S = π and
+super-node graph Sᵀ A S
+*gating.super_graph*`"):::sc
+    IS --> GO --> SN
+  end
+
+  subgraph MD["Model  ·  PyTorch, PyTorch Geometric"]
+    direction LR
+    EN("`Encoder
+linear, ReLU
+*model.NHDPGNN*`"):::sc
+    LY("`L gated layers
+node, community, global attention
+*model.NHDPLayer*`"):::sc
+    DE("`Decoder
+logits, optional Louvain head
+*model.NHDPGNN*`"):::sc
+    EN --> LY --> DE
+  end
+
+  subgraph RS["Training and result"]
+    direction LR
+    TR("`AdamW, early stopping
+on the validation metric
+*train.run, distributed.worker*`"):::sc
+    DG("`Diagnostics on the logits
+centroid gap, MADGap,
+k-means NMI and ARI`"):::out
+    RJ("`Result record
+runs/‹sweep›/‹key›.json
+metrics, timings, environment`"):::out
+    TR --> DG --> RJ
+  end
+
+  IN --> SA --> SB --> BT --> MD --> RS

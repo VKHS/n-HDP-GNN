@@ -1,0 +1,29 @@
+# Cluster check: the distributed path end to end on a small planted graph that every rank generates
+# itself (no dataset, no download), for the first run on the real machines.  It shows that the host
+# list, ssh, the Python environment, the rendezvous and gloo work across the network at each world
+# size, and that the ranks agree (stage B statistics and gradients are all-reduced).  It says nothing
+# about accuracy or speed: 800 nodes, 10 epochs.
+#
+#   HOSTFILE=hosts.txt WORLD_SIZES="2 14" ./scripts/launch_cluster.sh configs/cluster_check.toml
+#   python -m nhdp_gnn.report runs/cluster-check --scaling
+#
+# Every world size writes one result file, runs/cluster-check/<key>-ddp<p>.json, on rank 0's host.
+dataset = "synthetic"
+synthetic = { num_super = 4, comm_per_super = 4, nodes_per_comm = 50, seed = 0, class_alignment = 0.9 }
+regime = "full"
+model = "nhdp"
+depth = 4
+hidden = 16
+heads = 2
+epochs = 10
+patience = 50
+eval_every = 5
+partition = "community"
+nhdp_K = 12
+nhdp_T1 = 4
+nhdp_T2 = 3
+nhdp_max_iter = 20
+madgap_sources = 64
+threads = 6
+cache_dir = "runs/cluster-check/cache"
+out_dir = "runs/cluster-check"

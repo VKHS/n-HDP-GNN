@@ -1,0 +1,34 @@
+{
+  "config_sha256": "c76ce6bb80fe208da8d8ab84a382e55bc934631a634937f5b2ba121bfcb27954",
+  "diagrams": {
+    "addressing": {
+      "source_sha256": "3fa3929e809fc609662f8dac2036446880c3265d69fd75c2098999e028e03b20",
+      "svg_sha256": "425d9eb6ae7ea55f17d4b0e9d73d3905f0642c4ff725ca5497cf00c36da35c41"
+    },
+    "cluster": {
+      "source_sha256": "9be0001ea84c303446558e168499fc9a9009faa516214f6e5f65bf179ce0726a",
+      "svg_sha256": "75708613aed071e361269dcfd89f3731d975c243f7360064b679e253e9a5753c"
+    },
+    "distributed-run": {
+      "source_sha256": "de2880ffb329e3d927957c0c470f34306ca70d91deb1bb2ceeec0cb8d2f80717",
+      "svg_sha256": "c727473725c6ff1e67f863863c53c4d545ac0a4ac3b4e60ef0e3aaa175926e70"
+    },
+    "layer": {
+      "source_sha256": "da97039eb2b21e7702481e9dc023ffeb2deb0ea79d713e9af6d16338fc3cd9a2",
+      "svg_sha256": "a850b74ec3fc8493748246ba74b0db45bf6cb776a28c58cfb006535adaf37e59"
+    },
+    "modules": {
+      "source_sha256": "54c8b0c487bd1f047f5d67ec994ec50796f4e92758477535a54712bb2d9a4aaf",
+      "svg_sha256": "4579f13e83bd70c10818a549d9247206d61649eda17495138c59484ad3396e90"
+    },
+    "pipeline": {
+      "source_sha256": "43db26c4456ef0d0667cd05c9100d04e9ba22912d158173ff60d0b2bbe28a8dd",
+      "svg_sha256": "ee385be27ae03be48688b1aa5dcbfada4309afc455a0f345d03974eaaa06c225"
+    },
+    "reproduction": {
+      "source_sha256": "0dd2069edaa12f24e04097e62d7106782dc8cc42ead2b66003356085b0aa2351",
+      "svg_sha256": "de0dc6945f49b99a6d0c7eb9f0fe3b663242aaefda664801b309e40d6a69c107"
+    }
+  },
+  "mermaid_cli": "11.16.0"
+}

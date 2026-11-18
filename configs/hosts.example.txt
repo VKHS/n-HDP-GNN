@@ -1,0 +1,19 @@
+# One worker host per line, in rank order: the first line is rank 0 and the rendezvous point.
+# Blank lines and lines that start with # are ignored (by scripts/launch_cluster.sh and by
+# scripts/cluster_inventory.py).  These names are the example of docs/CLUSTER.md, section 5, not the
+# names of the original cluster: copy this file to hosts.txt and replace them with host names (or
+# addresses) that resolve on the launcher and on every node.
+nhdp-w01
+nhdp-w02
+nhdp-w03
+nhdp-w04
+nhdp-w05
+nhdp-w06
+nhdp-w07
+nhdp-w08
+nhdp-w09
+nhdp-w10
+nhdp-w11
+nhdp-w12
+nhdp-w13
+nhdp-w14

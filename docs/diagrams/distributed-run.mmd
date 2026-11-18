@@ -1,0 +1,46 @@
+sequenceDiagram
+  participant L as Launcher<br/>launch_cluster.sh
+  participant R0 as Rank 0<br/>first host in hosts.txt
+  participant RK as Ranks 1 … p−1
+
+  rect rgb(241, 240, 236)
+    Note over L,RK: START
+    L->>R0: ssh, torchrun --node-rank 0 --master-addr ‹first host› --master-port 29500
+    L->>RK: ssh, torchrun --node-rank i, same master address and port
+    Note over R0,RK: every rank: init_process_group("gloo")<br/>rendezvous at ‹first host›:29500
+    R0->>R0: load the dataset (download and process if needed)
+    R0-->>RK: barrier, then the other ranks load their own copy
+  end
+
+  rect rgb(231, 240, 251)
+    Note over L,RK: STAGE A
+    R0->>R0: p-way edge cut of the graph
+    R0->>RK: broadcast the part of every node
+    Note over R0,RK: every rank runs nested Louvain on its own part
+  end
+
+  rect rgb(253, 241, 214)
+    Note over L,RK: STAGE B
+    loop every CAVI iteration, until the ELBO converges
+      Note over L,RK: update on the rank's part, then all-reduce of the global statistics<br/>(stick counts, Normal-Gamma moments)
+    end
+    Note over L,RK: top-k responsibilities π of the rank's nodes<br/>induced subgraph of the part, cut edges are dropped
+  end
+
+  rect rgb(226, 243, 233)
+    Note over L,RK: STAGE C
+    R0-->>RK: DistributedDataParallel broadcasts rank 0's initial parameters
+    loop every epoch
+      Note over L,RK: forward and backward on the local part<br/>gradient all-reduce in buckets, a hook records bytes and wall time
+    end
+    loop every eval_every epochs
+      Note over L,RK: validation score from all-reduced counts, best state kept<br/>early stopping, decided identically on every rank
+    end
+  end
+
+  rect rgb(239, 233, 247)
+    Note over L,RK: RESULT
+    R0->>R0: write runs/hpc/‹key›-ddp‹p›.json
+    Note over L,RK: time per epoch, edge updates per second, all-reduce seconds per step<br/>Comms%, bytes per step (payload and ring wire estimate), ρ, r_E
+    R0-->>L: torchrun exits, ssh returns, the launcher goes on to the next world size
+  end

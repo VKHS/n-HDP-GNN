@@ -1,0 +1,48 @@
+flowchart TB
+  classDef data fill:#f1f0ec,stroke:#8a8985,color:#0b0b0b
+  classDef node fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef comm fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef glob fill:#fdf1d6,stroke:#c98a00,color:#0b0b0b
+  classDef op fill:#fcfcfb,stroke:#52514e,color:#0b0b0b
+  classDef out fill:#efe9f7,stroke:#7a54b0,color:#0b0b0b
+
+  H("`h: node states, N × d
+h0: the encoder output, kept for the initial residual`"):::data
+
+  GAT("`**Node level**
+GatedGATConv on edge_index_sl
+α_ij = g_ij · exp(e_ij) / Σ_k g_ik · exp(e_ik)
+*node_op = gcn: GCNConv with weights Â_ij · g_ij*`"):::node
+
+  PO("`**Community level**  ·  Eq. 16
+Pool to super-nodes
+H_c = Sᵀ h / mass`"):::comm
+  CAT("`CommunityAttention
+multi-head GAT on super_edge_index`"):::comm
+  UP("`Unpool to nodes
+S · H_c`"):::comm
+
+  GA("`**Global level**  ·  Eq. 17
+GlobalAttention over super-nodes
+softmax(score(H_c) + log mass)`"):::glob
+  BR("`Broadcast the read-out
+to every node`"):::glob
+
+  SUM(("`+`")):::op
+  NM("`Norm (batch, layer or none)
+ELU, Dropout  →  u`"):::op
+  RS("`**Residual**
+res: h + u
+initial: (1 − a) u + a h0
+none: u`"):::op
+  OUT("`h′: next states, N × d`"):::out
+
+  H --> GAT
+  H --> PO
+  PO --> CAT --> UP
+  CAT --> GA --> BR
+  GAT --> SUM
+  UP --> SUM
+  BR --> SUM
+  SUM --> NM --> RS --> OUT
+  H -. skip .-> RS

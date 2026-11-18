@@ -1,0 +1,60 @@
+flowchart TB
+  classDef host fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef sw fill:#fdf1d6,stroke:#c98a00,color:#0b0b0b
+  classDef node fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef note fill:#fcfcfb,stroke:#8a8985,color:#0b0b0b,stroke-dasharray: 4 3
+
+  EX("`**Example addressing plan, not the addresses of the original cluster**
+the article gives none; replace this with the values that
+scripts/cluster_inventory.py records on the real machines`"):::note
+
+  MA("`**nhdp-master**  ·  192.168.100.10
+launcher: runs scripts/launch_cluster.sh and ssh to every host
+not a rank, unless it is listed in hosts.txt`"):::host
+
+  SW("`**24-port Gigabit Ethernet switch**
+one flat subnet, 192.168.100.0/24
+no router needed during timed runs`"):::sw
+
+  subgraph WK["14 worker nodes  ·  address 192.168.100.(11 + rank)  ·  hostname nhdp-w(rank + 1)"]
+    direction LR
+    n01("`**nhdp-w01**
+.11
+rank 0`"):::node ~~~ n02("`**nhdp-w02**
+.12
+rank 1`"):::node ~~~ n03("`**nhdp-w03**
+.13
+rank 2`"):::node ~~~ n04("`**nhdp-w04**
+.14
+rank 3`"):::node ~~~ n05("`**nhdp-w05**
+.15
+rank 4`"):::node ~~~ n06("`**nhdp-w06**
+.16
+rank 5`"):::node ~~~ n07("`**nhdp-w07**
+.17
+rank 6`"):::node
+    n08("`**nhdp-w08**
+.18
+rank 7`"):::node ~~~ n09("`**nhdp-w09**
+.19
+rank 8`"):::node ~~~ n10("`**nhdp-w10**
+.20
+rank 9`"):::node ~~~ n11("`**nhdp-w11**
+.21
+rank 10`"):::node ~~~ n12("`**nhdp-w12**
+.22
+rank 11`"):::node ~~~ n13("`**nhdp-w13**
+.23
+rank 12`"):::node ~~~ n14("`**nhdp-w14**
+.24
+rank 13`"):::node
+  end
+
+  HF("`**hosts.txt**
+one host per line, in rank order
+the first line is rank 0 and the rendezvous point (port 29500)`"):::note
+
+  EX ~~~ MA
+  MA ==> SW
+  SW ==> WK
+  WK -.- HF

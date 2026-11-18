@@ -1,0 +1,60 @@
+flowchart LR
+  classDef cfg fill:#f1f0ec,stroke:#8a8985,color:#0b0b0b
+  classDef run fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef rec fill:#efe9f7,stroke:#7a54b0,color:#0b0b0b
+  classDef gh fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef cl fill:#fdf1d6,stroke:#c98a00,color:#0b0b0b
+
+  CF("`configs/*.toml
+one file per table or figure:
+name, [base], [grid], [[variant]], [actions]`"):::cfg
+
+  subgraph SW["python -m nhdp_gnn.sweep"]
+    direction TB
+    EX("`expand the grid into runs,
+select with --only, --shard, --seed`"):::run
+    PD("`skip runs that have a result
+or a recorded failure`"):::run
+    PL("`one process per run, N at a time
+memory watchdog, time limit`"):::run
+    TRN("`train.run
+stages A and B, training,
+diagnostics`"):::run
+    EX --> PD --> PL --> TRN
+  end
+
+  RC("`runs/‹sweep›/
+‹key›.json  or  ‹key›.failed.json
+reason: memory, time, diverged, error`"):::rec
+  MT("`scripts/make_tables.py
+mean ± 95% CI, Wilcoxon,
+failed runs listed per cell`"):::run
+  RS("`results/‹sweep›/
+README.md, runs.jsonl.gz,
+failures.jsonl.gz`"):::rec
+
+  subgraph GA["GitHub Actions  ·  reproduce.yml"]
+    direction TB
+    MX("`matrix of jobs, each runs its
+share with --workers 4`"):::gh
+    PB("`scripts/publish_results.py
+merge into branch results/‹sweep›`"):::gh
+    MX --> PB
+  end
+
+  subgraph CL["Cluster  ·  Tables 9 to 12"]
+    direction TB
+    LC("`scripts/launch_cluster.sh
+world sizes 1, 2, 4, 8, 14`"):::cl
+    RP("`python -m nhdp_gnn.report
+runs/hpc --scaling`"):::cl
+    LC --> RP
+  end
+
+  CF --> SW
+  SW --> RC
+  RC --> MT --> RS
+  CF --> GA
+  GA --> RS
+  CF --> CL
+  CL --> RS

@@ -1,0 +1,56 @@
+flowchart TB
+  classDef host fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef sw fill:#fdf1d6,stroke:#c98a00,color:#0b0b0b
+  classDef node fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef note fill:#fcfcfb,stroke:#8a8985,color:#0b0b0b,stroke-dasharray: 4 3
+
+  subgraph MA["Master and launcher host  ·  tower"]
+    direction LR
+    ML("`scripts/launch_cluster.sh
+one ssh and one torchrun
+per listed host`"):::host
+    MG("`GTX 1080 Ti, 11 GB VRAM
+Ubuntu Server`"):::host
+    ML ~~~ MG
+  end
+
+  SW("`**24-port Gigabit Ethernet switch**  ·  1 GbE
+flat L2 network, static addressing
+switch and VLAN reserved during timed runs`"):::sw
+
+  subgraph WK["14 worker nodes  ·  HP ProDesk desktops  ·  6-thread CPU, Intel UHD Graphics 630"]
+    direction LR
+    n01("`node 01
+rank 0`"):::node ~~~ n02("`node 02
+rank 1`"):::node ~~~ n03("`node 03
+rank 2`"):::node ~~~ n04("`node 04
+rank 3`"):::node ~~~ n05("`node 05
+rank 4`"):::node ~~~ n06("`node 06
+rank 5`"):::node ~~~ n07("`node 07
+rank 6`"):::node
+    n08("`node 08
+rank 7`"):::node ~~~ n09("`node 09
+rank 8`"):::node ~~~ n10("`node 10
+rank 9`"):::node ~~~ n11("`node 11
+rank 10`"):::node ~~~ n12("`node 12
+rank 11`"):::node ~~~ n13("`node 13
+rank 12`"):::node ~~~ n14("`node 14
+rank 13`"):::node
+  end
+
+  EN("`**On every node**
+Ubuntu Server, password-less OpenSSH
+Python 3.12 environment in /opt/cluster-env:
+PyTorch (CPU), PyTorch Geometric, mpi4py, NumPy, SciPy, Louvain
+a local copy of the repository and of the OGB and Planetoid datasets`"):::note
+
+  RZ("`**A training job on p nodes**  (p = 1, 2, 4, 8 or 14)
+torchrun with --nnodes p, gloo over TCP
+rank i on the i-th host of hosts.txt, rendezvous on the first host, port 29500
+data-parallel: gradients and n-HDP statistics are exchanged
+node features stay local`"):::note
+
+  MA ==> SW
+  SW ==> WK
+  WK -.- EN
+  WK -.- RZ

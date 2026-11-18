@@ -1,0 +1,70 @@
+flowchart TB
+  classDef free fill:#e7f0fb,stroke:#2a78d6,color:#0b0b0b
+  classDef torch fill:#e2f3e9,stroke:#1f8a55,color:#0b0b0b
+  classDef cli fill:#f1f0ec,stroke:#8a8985,color:#0b0b0b
+  classDef key fill:#fcfcfb,stroke:#c9c8c3,color:#52514e
+
+  subgraph L5["5  ·  Command lines"]
+    direction LR
+    C1("`python -m nhdp_gnn.train
+single process`"):::cli
+    C2("`python -m nhdp_gnn.sweep
+a table or a figure`"):::cli
+    C3("`python -m nhdp_gnn.distributed
+torchrun, one rank per node`"):::cli
+    C4("`python -m nhdp_gnn.artifacts
+python -m nhdp_gnn.report`"):::cli
+    C5("`scripts/ and examples/
+tables, figures, smoke, demo`"):::cli
+    C1 ~~~ C2 ~~~ C3 ~~~ C4 ~~~ C5
+  end
+
+  subgraph L4["4  ·  Runners"]
+    direction LR
+    TR("`**Trainers**  ·  needs PyTorch
+train.py, distributed.py`"):::torch
+    EX("`**Experiment tools**  ·  torch-free
+sweep.py, report.py, artifacts.py`"):::free
+    TR ~~~ EX
+  end
+
+  subgraph L3["3  ·  Run configuration  ·  torch-free"]
+    CF("`config.py
+RunConfig: one dataclass per experiment`"):::free
+  end
+
+  subgraph L2["2  ·  Pipeline  ·  torch-free"]
+    PI("`pipeline.py
+stages A and B, per-part batches (torch is imported inside build_batches)`"):::free
+  end
+
+  subgraph L1["1  ·  Building blocks"]
+    direction LR
+    SA("`**Stage A**
+partition.py
+communities.py`"):::free
+    SB("`**Stage B**
+nhdp.py`"):::free
+    GM("`**Gate and measures**
+gating.py
+metrics.py`"):::free
+    DA("`**Data**
+data.py
+synthetic.py
+splits.py`"):::free
+    MO("`**Models**  ·  needs PyTorch
+model.py, layers.py
+baselines.py, losses.py`"):::torch
+    SA ~~~ SB ~~~ GM ~~~ DA ~~~ MO
+  end
+
+  subgraph L0["0  ·  Shared helpers  ·  torch-free"]
+    UT("`utils.py
+seeding, hashing, timing, JSON, environment`"):::free
+  end
+
+  KY("`Blue: imports without PyTorch.   Green: needs PyTorch and PyTorch Geometric.
+A layer imports only from the layers below it; a layer that is a row of boxes does not import across the row.`"):::key
+
+  L5 --> L4 --> L3 --> L2 --> L1 --> L0
+  L0 ~~~ KY
