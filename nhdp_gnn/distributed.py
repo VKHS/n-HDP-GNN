@@ -228,10 +228,10 @@ def worker(cfg: RunConfig) -> dict | None:
 def run_and_leave(cfg: RunConfig) -> None:
     """Run ``worker`` in the current process group and leave the group.
 
-    After a successful run every rank waits at a barrier before any rank destroys the group, so that no rank exits
-    while another is still using the group: every rank but 0 returns from ``worker`` as soon as its last collective
-    is done, while rank 0 still writes the result.  After an exception the barrier is skipped, because the other ranks
-    may be waiting in a collective that this rank will never join.
+    After a successful run every rank waits at a barrier before any rank destroys the group: every rank but 0 returns
+    from ``worker`` as soon as its last collective is done, while rank 0 still writes the result.  After an exception
+    the barrier is skipped, because the other ranks may be waiting in a collective that this rank will never join.
+    A process that gets through this successfully should end with ``leave_process``.
     """
     try:
         worker(cfg)
@@ -240,10 +240,29 @@ def run_and_leave(cfg: RunConfig) -> None:
         dist.destroy_process_group()
 
 
+def leave_process(status: int = 0) -> None:
+    """End this process at once, without shutting the interpreter down, after flushing the standard streams.
+
+    A process that returns normally from a run aborts now and then at its very end ("terminate called without an
+    active exception", SIGABRT), after the result is written.  Cause, from the core files of such processes: the worker
+    threads of the gloo process group are still alive after ``destroy_process_group()``.  The one that has just finished
+    a collective releases the tensors of that work, and for a tensor that Python has already dropped this needs the
+    GIL.  If the main thread has begun to shut the interpreter down by then, Python ends the thread inside a destructor
+    that must not throw, and the C++ runtime calls ``std::terminate``.  ``os._exit`` skips the interpreter shutdown and
+    with it the race.  It also skips ``atexit`` handlers and finalizers; the package registers none, and the result is
+    written before the barrier.  Measured with ``scripts/check_distributed_exit.py`` (CHANGELOG): 4 ranks, 400 runs of
+    each way of leaving; 15 aborts without the barrier, 3 with it, none with it and ``os._exit``.
+    """
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(status)
+
+
 def _local_entry(rank: int, world: int, port: int, cfg_dict: dict) -> None:
     os.environ.update(MASTER_ADDR="127.0.0.1", MASTER_PORT=str(port))
     dist.init_process_group("gloo", rank=rank, world_size=world)
     run_and_leave(config_from_dict(cfg_dict))
+    leave_process()
 
 
 def _free_port() -> int:
@@ -267,3 +286,4 @@ def main(argv=None) -> None:
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+    leave_process()

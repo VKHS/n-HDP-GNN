@@ -69,7 +69,10 @@ hosts of the hosts file, and each runs `torchrun --nnodes p --nproc-per-node 1 -
 * every rank trains on its part with DDP, which averages the gradients; node features never leave their node
   (stage C);
 * rank 0 writes the result file `<out_dir>/<key>-ddp<p>.json`, including the time per epoch, the all-reduce
-  payload and time per step, and the cut-edge ratio rho.
+  payload and time per step, and the cut-edge ratio rho;
+* every rank then waits at a barrier, leaves the process group and ends its process with `os._exit(0)`. Without that,
+  between one and four runs in a hundred ended with one process killed by SIGABRT during interpreter shutdown, after
+  the result had been written (changelog, `nhdp_gnn.distributed.leave_process`).
 
 ## 5. A reference addressing plan (example values)
 
@@ -218,6 +221,11 @@ The same on every worker, as the article describes it (section 1):
    `configs/cluster_check.toml` is a small planted graph that every rank generates itself (800 nodes, 10 epochs). It
    shows that ssh, the environment, the rendezvous, gloo and the all-reduces work between the machines at the
    world sizes you ask for. It says nothing about accuracy or speed.
+5. Optional, once per PyTorch or Python version: `python scripts/check_distributed_exit.py --world 4 --rounds 25` runs
+   four local processes again and again and counts the runs in which a process was killed while it exited, for the
+   previous exit sequence and for the one the code uses now. On GitHub runners (torch 2.15.0, Python 3.12.16) it was
+   32 of 800 runs for the previous sequence and 0 of 400 for the current one; the counts depend on the machine and
+   the versions, so a non-zero count for `exit` on your machines is worth reporting with the versions.
 
 ## 8. Recording the real inventory
 

@@ -20,6 +20,28 @@
 - `scripts/launch_cluster.sh` ignores comments and blank lines in the host file, tolerates CRLF line ends, can pin
   gloo's network interface (`GLOO_SOCKET_IFNAME`), fails when nothing ran, and is tested with a stand-in `ssh`.
 - The `tests` workflow installs the `figures` extra, so the tests of the demo's figures run on CI.
+- `nhdp_gnn.distributed`: a run in which every process succeeded could still end with one of them killed by SIGABRT
+  ("terminate called without an active exception") while the interpreter shut down, after the result file was written;
+  it showed up as a failed four-rank test of the `tests` workflow. Core files of such processes give the cause: the
+  worker threads of the gloo process group are still alive after `destroy_process_group()` (a probe counted 1 thread
+  before `init_process_group` and 4 after `destroy_process_group`), and the one that has just finished a collective
+  drops the tensors of that work, which needs the GIL. The main thread is by then shutting the interpreter down, so
+  Python ends the worker thread inside a destructor that must not throw, and the process aborts. Now every rank waits
+  at a barrier before it leaves the process group (`run_and_leave`) and then ends its process with `os._exit` after
+  flushing the standard streams (`leave_process`, used by `spawn_local` and by `python -m nhdp_gnn.distributed`). The
+  package registers no `atexit` handler and the result is written before the barrier, so nothing is lost.
+  Measured on GitHub runners (torch 2.15.0, Python 3.12.16; throwaway workflow runs
+  [44330801025](https://github.com/VKHS/n-HDP-GNN/actions/runs/44330801025),
+  [44332940231](https://github.com/VKHS/n-HDP-GNN/actions/runs/44332940231),
+  [44335278607](https://github.com/VKHS/n-HDP-GNN/actions/runs/44335278607) and
+  [44339044832](https://github.com/VKHS/n-HDP-GNN/actions/runs/44339044832)): with four processes on one machine
+  (`spawn_local`), the previous exit aborted in 32 of 800 runs (4.0%), the barrier alone in 9 of 800 (1.1%) and the
+  barrier with `os._exit` in 0 of 400 (the 95% upper bound of its rate is 0.9%); a half-second sleep before the
+  process ended instead of `os._exit` also gave 0 of 400. With the launch path of the cluster (`torchrun`, four
+  processes on one machine) the previous module ended with exit status 1 (SIGABRT, result file written) in 2 of 192
+  runs and the new one in 0 of 192, too few to tell them apart by themselves (p = 0.5). Not measured: other PyTorch
+  or Python versions, and processes on several machines. `scripts/check_distributed_exit.py` repeats the first
+  measurement; the counts depend on the machine and the versions.
 - `examples/output/` holds the output of run 44330815122 of the `demo` workflow, copied unchanged (code commit c9540fe,
   AMD EPYC 9V74 runner, 90 of 90 training runs, 9.9 minutes). `tests/test_committed_outputs.py` checks that it records a
   workflow run on a clean checkout of a commit in the history and that its tables follow from its JSON and run records;
