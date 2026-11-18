@@ -234,3 +234,45 @@ def test_runs_without_a_record_are_listed_not_filled_in(trained, demo):
     text = real_report(dict(ctx, trained=partial))
     assert f"34 of 36 runs completed, 1 failed, 1 have no record." in text
     assert f"Runs without a record: {missing_cfg.tag} depth {missing_cfg.depth} seed {missing_cfg.seed}" in text
+
+
+def test_the_seeds_behind_every_cell_are_in_the_json_and_give_the_table_entry(trained):
+    out, ctx, _ = trained()
+    doc = load(out)[1]["training"]
+    seeds = doc["seed_values"]
+    assert seeds["test"]["nhdp|2"] == pytest.approx([100 * (0.70 - 0.02 + 0.01 * s) for s in range(3)])   # in order of seed
+    assert seeds["test"]["gat|8"] == pytest.approx([100 * (0.60 - 0.08 + 0.01 * s) for s in (0, 2)])      # the failed seed is absent
+    for key in ("test", "centroid_gap", "nmi"):
+        assert set(seeds[key]) == set(doc["cells"][key])
+        for cell, (mean, half_width, n) in doc["cells"][key].items():
+            assert len(seeds[key][cell]) == n
+            assert np.mean(seeds[key][cell]) == pytest.approx(mean)
+
+
+@pytest.mark.skipif(not HAS_MPL, reason="needs matplotlib")
+def test_the_trained_figure_draws_the_seeds_and_no_interval_past_one_hundred_percent(demo, tmp_path, monkeypatch):
+    """Five seeds of which some trained and some did not give a t-interval above 100%; the figure shows the seeds instead."""
+    import matplotlib.figure
+
+    drawn = []
+    real_savefig = matplotlib.figure.Figure.savefig
+    monkeypatch.setattr(matplotlib.figure.Figure, "savefig",
+                        lambda self, *a, **k: (drawn.append(list(self.axes)), real_savefig(self, *a, **k))[1])
+    depths = [2, 32]
+    accuracy = {2: [97.0, 97.5, 96.5, 97.0, 98.0], 32: [97.0, 98.0, 51.0, 96.0, 60.0]}        # bimodal at depth 32
+    records = [{"config": {"tag": vid, "depth": d, "seed": s}, "test": a / 100, "embedding": {"centroid_gap": a / 100, "nmi": 0.5}}
+               for vid, _, _ in demo.VARIANTS for d in depths for s, a in enumerate(accuracy[d])]
+    summary = {"depths": depths}
+    for key, value in (("test", lambda r: 100 * r["test"]), ("centroid_gap", lambda r: r["embedding"]["centroid_gap"])):
+        summary[key] = demo.aggregate(records, depths, value)
+        summary[key + "_seeds"] = demo.per_seed(records, depths, value)
+    mean, half_width, n = summary["test"][("nhdp", 32)]
+    assert mean + half_width > 100.0                                   # the interval the table reports does pass 100%
+    path = tmp_path / "fig.png"
+    demo.figure_depth_trained(path, summary, 4)
+    assert path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    accuracy_axes = drawn[0][0]
+    assert accuracy_axes.get_ylim()[1] <= 101.0
+    assert not any(type(c).__name__ == "ErrorbarContainer" for ax in drawn[0] for c in ax.containers)
+    dots = [line for line in accuracy_axes.get_lines() if line.get_marker() == "o" and line.get_linestyle() == "None"]
+    assert len(dots) == len(demo.VARIANTS) * len(depths) and all(len(line.get_xdata()) == 5 for line in dots)

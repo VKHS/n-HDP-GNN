@@ -241,6 +241,15 @@ def aggregate(results: list, depths, value) -> dict:
     return {(vid, d): mean_ci(cells.get((vid, d), [])) for vid, _, _ in VARIANTS for d in depths}
 
 
+def per_seed(results: list, depths, value) -> dict:
+    """{(variant id, depth): [value(record) for each seed, in order of seed]}; empty for a cell without records."""
+    cells: dict = {}
+    for r in sorted(results, key=lambda r: r["config"]["seed"]):
+        v = value(r)
+        cells.setdefault((r["config"]["tag"], r["config"]["depth"]), []).append(float("nan") if v is None else float(v))
+    return {(vid, d): cells.get((vid, d), []) for vid, _, _ in VARIANTS for d in depths}
+
+
 def median_best_epoch(results: list, depths) -> dict:
     cells: dict = {}
     for r in results:
@@ -251,10 +260,11 @@ def median_best_epoch(results: list, depths) -> dict:
 
 def trained_summary(cfgs, depths, seeds) -> dict:
     results, failures, missing = collect(cfgs)
+    values = {"test": lambda r: 100.0 * r["test"], "centroid_gap": lambda r: r["embedding"]["centroid_gap"],
+              "nmi": lambda r: r["embedding"]["nmi"]}
     return {"results": results, "failures": failures, "missing": missing, "depths": list(depths), "seeds": seeds,
-            "test": aggregate(results, depths, lambda r: 100.0 * r["test"]),
-            "centroid_gap": aggregate(results, depths, lambda r: r["embedding"]["centroid_gap"]),
-            "nmi": aggregate(results, depths, lambda r: r["embedding"]["nmi"]),
+            **{k: aggregate(results, depths, f) for k, f in values.items()},
+            **{k + "_seeds": per_seed(results, depths, f) for k, f in values.items()},
             "epochs": median_best_epoch(results, depths)}
 
 
@@ -431,7 +441,11 @@ def figure_depth_free(path: Path, study: dict) -> None:
     plt.close(fig)
 
 
-def figure_depth_trained(path: Path, summary: dict) -> None:
+def figure_depth_trained(path: Path, summary: dict, classes: int) -> None:
+    """Mean of the seeds as a marker on a line, every single seed as a small dot behind it.
+
+    The 95% intervals are in the report's tables; they are not drawn, because a t-interval over five seeds reaches
+    past 100% accuracy when some seeds trained and others did not, and the dots show that directly."""
     plt = _style()
     depths = summary["depths"]
     x = np.arange(len(depths))
@@ -440,19 +454,29 @@ def figure_depth_trained(path: Path, summary: dict) -> None:
     panels = [("test", "test accuracy (%)", "(a) Test accuracy by depth"),
               ("centroid_gap", "centroid gap of the logits", "(b) Class separation of the logits by depth")]
     for ax, (key, ylabel, title) in zip(axes, panels):
+        every = []
         for i, (vid, label, _) in enumerate(VARIANTS):
-            cells = [summary[key][(vid, d)] for d in depths]
-            y = np.array([c[0] for c in cells])
-            ci = np.array([c[1] for c in cells])
-            if np.isfinite(y).any():
-                _line(ax, x, y, SERIES[vid], MARKERS[vid], label, ci, dashed=vid == "nhdp_gate_off",
-                      dodge=(i - (n - 1) / 2) * 0.07)
+            dodge = (i - (n - 1) / 2) * 0.12
+            for j, d in enumerate(depths):
+                vals = [v for v in summary[key + "_seeds"][(vid, d)] if np.isfinite(v)]
+                every += vals
+                ax.plot(np.full(len(vals), x[j] + dodge), vals, ls="none", marker="o", ms=3.4, mew=0, color=SERIES[vid],
+                        alpha=0.5, zorder=2, clip_on=False)
+            means = np.array([summary[key][(vid, d)][0] for d in depths])
+            if np.isfinite(means).any():
+                _line(ax, x, means, SERIES[vid], MARKERS[vid], label, dashed=vid == "nhdp_gate_off", dodge=dodge)
         ax.set_xticks(x)
         ax.set_xticklabels([str(d) for d in depths])
-        ax.set_xlim(-0.4, len(depths) - 1 + 0.4)
-        ax.set_xlabel("depth (propagation steps); bars: 95% interval over seeds")
+        ax.set_xlim(-0.45, len(depths) - 1 + 0.45)
+        ax.set_xlabel("depth (propagation steps); dots: single seeds")
         ax.set_ylabel(ylabel)
         ax.set_title(title, loc="left")
+        if key == "test":                                      # what predicting at random would give
+            chance = 100.0 / classes
+            ax.axhline(chance, color=AXIS, lw=1.0, ls=(0, (3, 3)), zorder=1)
+            ax.annotate(f"{chance:.0f}%: one class in {classes}", (-0.45, chance), xytext=(4, 4),
+                        textcoords="offset points", fontsize=8, color=INK2)
+            ax.set_ylim(max(0.0, min(every + [chance]) - 6.0), 101.0)
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False, bbox_to_anchor=(0.5, -0.01))
     fig.tight_layout(rect=(0, 0.07, 1, 1))
@@ -460,7 +484,6 @@ def figure_depth_trained(path: Path, summary: dict) -> None:
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------- report
 def md_table(header: list, rows: list) -> list:
     return ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)] + ["| " + " | ".join(map(str, r)) + " |" for r in rows]
 
@@ -639,7 +662,9 @@ def build_report(ctx: dict) -> str:
                             f["failure"].get("detail", "")[:120].replace("|", "/")] for f in tr["failures"]])
         if tr["missing"]:
             L += ["", "Runs without a record: " + ", ".join(f"{c.tag} depth {c.depth} seed {c.seed}" for c in tr["missing"][:20])]
-        L += ["", "![Depth with training](fig_depth_trained.png)", ""]
+        L += ["", "![Depth with training](fig_depth_trained.png)", "",
+              "In the figure a marker is the mean over the seeds and each small dot is one seed; the 95% intervals are in "
+              "the tables above. The dashed line in panel (a) is the accuracy of choosing one class at random.", ""]
         cpus = sorted({r["environment"].get("cpu_model") for r in tr["results"] if r.get("environment")} - {None})
         if len(cpus) > 1:
             L += [f"The runs were made on more than one CPU model ({'; '.join(cpus)}); results can differ in the "
@@ -733,7 +758,7 @@ def main(argv=None) -> int:
             figure_depth_free(out / "fig_depth_free.png", study)
             figures = ["fig_graph.png", "fig_stage_ab.png", "fig_depth_free.png"]
             if trained is not None:
-                figure_depth_trained(out / "fig_depth_trained.png", trained)
+                figure_depth_trained(out / "fig_depth_trained.png", trained, facts["classes"])
                 figures.append("fig_depth_trained.png")
 
     command = "python examples/demo.py" + (" " + " ".join(argv) if argv else "")
@@ -749,6 +774,8 @@ def main(argv=None) -> int:
            "training": None if trained is None else {
                "base": base, "depths": list(train_depths), "seeds": seeds, "variants": [v[0] for v in VARIANTS],
                "cells": {k: {f"{vid}|{d}": list(v) for (vid, d), v in trained[k].items()} for k in ("test", "centroid_gap", "nmi")},
+               "seed_values": {k: {f"{vid}|{d}": v for (vid, d), v in trained[k + "_seeds"].items()}
+                               for k in ("test", "centroid_gap", "nmi")},
                "completed": len(trained["results"]), "failed": len(trained["failures"]), "missing": len(trained["missing"])}}
     save_json(out / "demo.json", doc)
     if trained is not None:
